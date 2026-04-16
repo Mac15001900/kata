@@ -1,0 +1,30 @@
+Inside the project folder, open 2 terminals.
+
+In one of them run:
+ ngrok http 3000 
+
+ In the other run either:
+ npm run start
+ Or to use a debugger:
+ node --inspect .\app.js
+
+ For the debugger, type chrome://inspect in Chrome, then select "Open dedicated DevTools for Node"
+Local variables are not available to the debugger - either use breakpoints or attach them to "global" to make them available
+
+To update commands, run:
+npm run register
+Discord DMs update instantly; for server kick and re-invite the bot, or wait ~1 hour
+
+
+Command options docs:
+https://docs.discord.com/developers/interactions/application-commands#application-command-object-application-command-option-type
+
+Basic bot-making tutorial:
+https://docs.discord.com/developers/quick-start/getting-started
+
+Using discord-interactions to handle responding to commands
+Using Eris to handle just sending a message that isn't a response, since the former doesn't seem to support that
+https://github.com/abalabahaha/eris
+
+Potentially useful: node canvas
+https://github.com/Automattic/node-canvas
