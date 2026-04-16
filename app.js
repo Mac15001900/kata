@@ -8,10 +8,11 @@ import {
     MessageComponentTypes,
     verifyKeyMiddleware,
 } from 'discord-interactions';
-import { getRandomEmoji, DiscordRequest } from './utils.js';
+import { getRandomEmoji, DiscordRequest, getRandomLetters } from './utils.js';
 import { getShuffledOptions, getResult } from './game.js';
 import Eris from "eris";
 import fs from 'fs';
+import { renderTableImage } from './drawTableImage.js';
 
 // Create an express app
 const app = express();
@@ -165,6 +166,22 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                 case 'multi':
                     erisBot.createMessage(channel_id, "Wszyscy to widzą");
                     return secretRespond("A tego już nie");
+                case 'table':
+                    await (async () => {
+                        const data = Array.from({ length: 26 }, (_, r) =>
+                            // Array.from({ length: 20 }, (_, c) => `U-${r + 1}${c + 1}`)
+                            Array.from({ length: 20 }, (_, c) => `U-${getRandomLetters(4)}\nU-${getRandomLetters(4)}\n/\\/\\/\\/\\/\\\nCity 1\nHas a road`)
+                        );
+                        const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
+                        fs.writeFileSync('tableThing.png', buffer);
+                    })();
+                    /*erisBot.createMessage(TEST_CHANNEL, {
+                        content: "Look at this map!"
+                    }, {
+                        name: "map.png",
+                        file: fs.readFileSync("./tableThing.png")
+                    });*/
+                    return secretRespond("Sending table...");
                 default: return respond("Nieistniejąca akcja: " + actionString);
             }
         }
