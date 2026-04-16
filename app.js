@@ -13,6 +13,7 @@ import { getShuffledOptions, getResult } from './game.js';
 import Eris from "eris";
 import fs from 'fs';
 import { renderTableImage } from './drawTableImage.js';
+import { BUILDING, FEATURE, BIOME, Tile, Player, makeRandomPlayers } from './objects.js';
 
 // Create an express app
 const app = express();
@@ -168,10 +169,15 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                     return secretRespond("A tego już nie");
                 case 'table':
                     await (async () => {
-                        const data = Array.from({ length: 26 }, (_, r) =>
+                        /*const data = Array.from({ length: 26 }, (_, r) =>
                             // Array.from({ length: 20 }, (_, c) => `U-${r + 1}${c + 1}`)
                             Array.from({ length: 20 }, (_, c) => `U-${getRandomLetters(4)}\nU-${getRandomLetters(4)}\n/\\/\\/\\/\\/\\\nCity 1\nHas a road`)
-                        );
+                        );*/
+                        const players = makeRandomPlayers(85, 20, 26);
+                        const tiles = Array.from({ length: 26 }, (_, r) =>
+                            Array.from({ length: 20 }, (_, c) => new Tile(c, r, BIOME.GRASSLAND, FEATURE.NONE)));
+                        tiles.forEach(row => row.forEach(t => t.updatePlayers(players)));
+                        const data = tiles.map(row => row.map(tile => tile.printTile()));
                         const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
                         fs.writeFileSync('tableThing.png', buffer);
                     })();
