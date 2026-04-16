@@ -1,0 +1,201 @@
+<!--
+Simple generator that draws a table with given values, and allows downloading it as an image. Mostly AI-generated.
+Usage:
+const canvas = document.getElementById('tableCanvas'); 
+Create a 'data' object that's a 2D array of strings
+drawTable(canvas, data, { font: '14px Arial', align: 'center', fitColumns: false }); 
+-->
+
+<canvas id="tableCanvas" width="1601" height="1600"></canvas>
+<button id="saveBtn">Save as PNG</button>
+<script>
+  /**
+   * Draw a 2D string table on a canvas.
+   * @param {HTMLCanvasElement} canvas
+   * @param {string[][]} data  - 2D array: data[row][col]
+   * @param {object} [opts]
+   *   opts = {
+   *     font: '16px sans-serif',
+   *     textColor: '#000',
+   *     cellPadding: 6,
+   *     borderColor: '#666',
+   *     borderWidth: 1,
+   *     colWidths: null,      // array of widths; if null, auto-calc (or equal)
+   *     rowHeights: null,     // array of heights; if null, auto-calc (or equal)
+   *     fitColumns: true,     // if true, calculate col widths to fit contents
+   *     align: 'left'|'center'|'right',
+   *     valign: 'middle'|'top'|'bottom',
+   *     wrap: true,           // wrap long text into multiple lines
+   *     maxWidth: canvas.width - 2, // used if fitColumns false
+   *   }
+   */
+  function drawTable(canvas, data, opts = {}) {
+    if (!canvas || !canvas.getContext) throw new Error('Must pass a canvas element');
+    const ctx = canvas.getContext('2d');
+
+    // defaults
+    const {
+      font = '16px sans-serif',
+      textColor = '#000',
+      cellPadding = 6,
+      borderColor = '#666',
+      borderWidth = 1,
+      colWidths = null,
+      rowHeights = null,
+      fitColumns = true,
+      align = 'left',
+      valign = 'middle',
+      wrap = true,
+      maxWidth = canvas.width - 2
+    } = opts;
+
+    ctx.save();
+    ctx.font = font;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = textColor;
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = borderWidth;
+
+    const rows = data.length;
+    const cols = rows ? Math.max(...data.map(r => r.length)) : 0;
+
+    // helper: measure wrapped lines for a given width
+    function wrapTextLines(text, maxW) {
+      if (!wrap) return String(text).split(/\r\n|\r|\n/);
+
+      const paragraphs = String(text).split(/\r\n|\r|\n/);
+      const lines = [];
+
+      for (const para of paragraphs) {
+        // preserve blank lines
+        if (para === '') {
+          lines.push('');
+          continue;
+        }
+
+        const words = para.split(/\s+/);
+        let current = '';
+        for (let w of words) {
+          const test = current ? current + ' ' + w : w;
+          const tw = ctx.measureText(test).width;
+          if (tw + 1 <= maxW || !current) {
+            current = test;
+          } else {
+            lines.push(current);
+            current = w;
+          }
+        }
+        if (current) lines.push(current);
+      }
+
+      return lines.length ? lines : [''];
+    }
+
+    // calculate column widths
+    const computedColWidths = new Array(cols).fill(0);
+    if (colWidths && colWidths.length >= cols) {
+      for (let c = 0; c < cols; c++) computedColWidths[c] = colWidths[c];
+    } else if (fitColumns) {
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < (data[r] ? data[r].length : 0); c++) {
+          const txt = String(data[r][c] ?? '');
+          // measure single-line width
+          const w = ctx.measureText(txt).width;
+          computedColWidths[c] = Math.max(computedColWidths[c], w + 2 * cellPadding);
+        }
+      }
+      // if no widths (empty data) or sum > maxWidth, fallback to equal widths
+      const total = computedColWidths.reduce((a, b) => a + b, 0);
+      if (total === 0 || total > maxWidth) {
+        const equal = Math.floor(maxWidth / Math.max(1, cols));
+        for (let c = 0; c < cols; c++) computedColWidths[c] = equal;
+      }
+    } else {
+      // distribute maxWidth evenly
+      const eq = Math.floor(maxWidth / Math.max(1, cols));
+      for (let c = 0; c < cols; c++) computedColWidths[c] = eq;
+    }
+
+    // calculate row heights based on wrapped lines
+    const lineHeight = Math.ceil(parseInt(font, 10) * 1.2) || 18;
+    const computedRowHeights = new Array(rows).fill(0);
+    if (rowHeights && rowHeights.length >= rows) {
+      for (let r = 0; r < rows; r++) computedRowHeights[r] = rowHeights[r];
+    } else {
+      for (let r = 0; r < rows; r++) {
+        let maxH = 0;
+        for (let c = 0; c < cols; c++) {
+          const txt = String((data[r] && data[r][c]) ?? '');
+          const cw = computedColWidths[c] ? Math.max(1, computedColWidths[c] - 2 * cellPadding) : maxWidth;
+          const lines = wrapTextLines(txt, cw);
+          maxH = Math.max(maxH, lines.length * lineHeight + 2 * cellPadding);
+        }
+        computedRowHeights[r] = maxH || lineHeight + 2 * cellPadding;
+      }
+    }
+
+    // compute cell positions
+    const colX = new Array(cols);
+    colX[0] = borderWidth / 2;
+    for (let c = 1; c < cols; c++) colX[c] = colX[c - 1] + computedColWidths[c - 1];
+
+    const rowY = new Array(rows);
+    rowY[0] = borderWidth / 2;
+    for (let r = 1; r < rows; r++) rowY[r] = rowY[r - 1] + computedRowHeights[r - 1];
+
+    // optional: clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // draw cells
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = colX[c];
+        const y = rowY[r];
+        const w = computedColWidths[c];
+        const h = computedRowHeights[r];
+
+        // draw border rectangle
+        ctx.beginPath();
+        ctx.rect(x, y, w, h);
+        ctx.stroke();
+
+        // draw text
+        const txt = String((data[r] && data[r][c]) ?? '');
+        const innerW = Math.max(1, w - 2 * cellPadding);
+        const lines = wrapTextLines(txt, innerW);
+
+        // compute vertical start based on valign
+        let textBlockHeight = lines.length * lineHeight;
+        let startY;
+        if (valign === 'top') startY = y + cellPadding;
+        else if (valign === 'bottom') startY = y + h - cellPadding - textBlockHeight + lineHeight; // baseline adjust
+        else startY = y + (h - textBlockHeight) / 2 + (lineHeight * 0.8); // middle (approx baseline)
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          let tx;
+          const measured = ctx.measureText(line).width;
+          if (align === 'center') tx = x + (w - measured) / 2;
+          else if (align === 'right') tx = x + w - cellPadding - measured;
+          else tx = x + cellPadding;
+          const ty = startY + i * lineHeight;
+          ctx.fillText(line, tx, ty);
+        }
+      }
+    }
+
+    ctx.restore();
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    const canvas = document.getElementById('tableCanvas');
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'table.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  });
+</script>
