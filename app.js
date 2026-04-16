@@ -11,6 +11,7 @@ import {
 import { getRandomEmoji, DiscordRequest } from './utils.js';
 import { getShuffledOptions, getResult } from './game.js';
 import Eris from "eris";
+import fs from 'fs';
 
 // Create an express app
 const app = express();
@@ -23,6 +24,8 @@ global.state = state;
 global.Eris = Eris;
 state.counter = 0;
 let erisBotReady = false
+
+const TEST_CHANNEL = '1494003881695379620';
 
 //Setup Eris
 const erisBot = new Eris(process.env["DISCORD_TOKEN"], {
@@ -38,14 +41,52 @@ erisBot.on("ready", () => { // When the bot is ready
 
 
 erisBot.on("error", (err) => {
-    console.error(err); // or your preferred logger
+    console.error(err);
 });
 
 erisBot.connect();
 
 global.test = function (text) {
     console.log("attempting to send " + text);
-    erisBot.createMessage('1494003881695379620', text);
+    erisBot.createMessage(TEST_CHANNEL, text);
+}
+
+global.embedTest = function () {
+    erisBot.createMessage(TEST_CHANNEL, {
+        embeds: [{
+            title: "I'm an embed!", // Title of the embed
+            description: "Here is some more info, with **awesome** formatting.\nPretty *neat*, huh?",
+            /*author: { // Author property
+                name: msg.author.username,
+                icon_url: msg.author.avatarURL
+            },*/
+            color: 0x008000, // Color, either in hex (show), or a base-10 integer
+            fields: [ // Array of field objects
+                {
+                    name: "Some extra info.", // Field title
+                    value: "Some extra value.", // Field
+                    inline: true // Whether you want multiple fields in same line
+                },
+                {
+                    name: "Some more extra info.",
+                    value: "Another extra value.",
+                    inline: true
+                }
+            ],
+            footer: { // Footer text
+                text: "Created with Eris."
+            }
+        }]
+    });
+}
+
+global.imageTest = function () {
+    erisBot.createMessage(TEST_CHANNEL, {
+        content: "Look at this image!"
+    }, {
+        name: "Image test of testiness.png",
+        file: fs.readFileSync("./testImage.png")
+    });
 }
 
 /**
@@ -54,7 +95,8 @@ global.test = function (text) {
  */
 app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async function (req, res) {
     // Interaction id, type and data
-    const { id, type, data } = req.body;
+    const { id, type, data, channel_id } = req.body;
+    // console.log(req.body);
 
     /**
      * Handle verification requests
@@ -101,16 +143,28 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                         components: [
                             {
                                 type: MessageComponentTypes.TEXT_DISPLAY,
-                                // Fetches a random emoji to send from a helper function
                                 content: text
                             }
                         ]
                     },
                 });
             }
+            let secretRespond = (text) => {
+                return res.send({
+                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                    data: {
+                        flags: InteractionResponseFlags.EPHEMERAL,
+                        content: text
+                    }
+                });
+            }
 
             switch (actionString) {
                 case 'góra': return respond("Przemieszczas się w górę");
+                case 'secret': return secretRespond("Only you can see this!");
+                case 'multi':
+                    erisBot.createMessage(channel_id, "Wszyscy to widzą");
+                    return secretRespond("A tego już nie");
                 default: return respond("Nieistniejąca akcja: " + actionString);
             }
         }
