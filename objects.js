@@ -43,22 +43,55 @@ export class Tile {
         if (this.players.length > 2) {
             res[0] = `U x ${this.players.length}`;
         } else {
-            if (this.players[0]) res[0] = this.players[0].nickname;
-            if (this.players[1]) res[1] = this.players[1].nickname;
+            if (this.players[0]) res[0] = this.players[0].name;
+            if (this.players[1]) res[1] = this.players[1].name;
         }
         // res[2] = "Osada 99"
         res[3] = "......"; //Add terrain features here
         return res.join('\n');
     }
+}
 
+export class Board {
+    constructor(tiles) {
+        this.tiles = tiles;
+    }
+
+    has(x, y) {
+        if (typeof x === 'object') {
+            y = x[1];
+            x = x[0];
+        }
+        return !(x < 0 || x >= this.width || y < 0 || y >= this.height);
+    }
+
+    get(x, y) {
+        if (typeof x === 'object') {
+            y = x[1];
+            x = x[0];
+        }
+        if (x < 0 || x >= this.width || y < 0 || y >= this.height) return undefined;
+        return this.tiles[x][y];
+    }
+
+    printableData() {
+        return this.tiles.map(row => row.map(tile => tile.printTile()));
+    }
+
+    foreach(f) {
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                f(this.tiles[y][x], x, y);
+            }
+        }
+    }
 }
 
 export class Player {
-    constructor(name, startingX, startingY, discordId) {
-        this.name = name;
+    constructor(fullName, startingX, startingY, discordId) {
+        this.name = this.makeNameShorthand(fullName);
         this.x = startingX;
         this.y = startingY;
-        this.nickname = name;
         this.discordId = discordId;
 
         this.maxAp = 2;

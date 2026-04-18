@@ -8,12 +8,13 @@ import {
     MessageComponentTypes,
     verifyKeyMiddleware,
 } from 'discord-interactions';
-import { getRandomEmoji, DiscordRequest, getRandomLetters } from './utils.js';
+import { getRandomEmoji, DiscordRequest, getRandomLetters, getServerMembers } from './utils.js';
 import { getShuffledOptions, getResult } from './examples/game.js';
 import Eris from "eris";
 import fs from 'fs';
 import { renderTableImage } from './drawTableImage.js';
 import { BUILDING, FEATURE, BIOME, Tile, Player, makeRandomPlayers } from './objects.js';
+import { Game } from './game.js';
 
 // Create an express app
 const app = express();
@@ -31,6 +32,8 @@ const TEST_CHANNEL = '1494003881695379620';
 const TEST_SERVER = '1494003881695379617';
 const SHOW_TABLE_ON_DISCORD = false;
 const BYPASS_MEMBER_GATHERING = false;
+const game = new Game();
+global.game = game;
 
 global.TEST_CHANNEL = TEST_CHANNEL;
 global.TEST_SERVER = TEST_SERVER;
@@ -167,7 +170,40 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
         }
 
         if (name === "debug") {
-            switch (data.options[0].value) {
+            let input = data.options[0].value;
+            let command = data.options[0].value.split(' ')[0];
+            let options = data.options[0].value.split(' ').slice(1);
+            switch (command) {
+                //Useful options
+                case 'map':
+                    const data = game.board.printableData();
+                    const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
+                    fs.writeFileSync('tableThing.png', buffer);
+                    if (SHOW_TABLE_ON_DISCORD) {
+                        erisBot.createMessage(TEST_CHANNEL, {
+                            content: "Look at this map!"
+                        }, {
+                            name: "map.png",
+                            file: fs.readFileSync("./tableThing.png")
+                        });
+                    }
+                    return secretRespond("Printing the map...");
+                case 'addRole':
+                    let members = getServerMembers(guild_id);
+                    let valid = members.filter(m => m.roles.includes(options[0]));
+                    if (valid.length === 0) return secretRespond("No users found with that role");
+                    else {
+                        for (let i = 0; i < valid.length; i++) {
+                            game.addDiscordMemberAsPlayer(valid[i]);
+                        }
+                        return secretRespond("Added " + valid.length + " users");
+                    }
+                //Random tests
+                case 'printUsers':
+                    // const guild = erisBot.guilds.get(guild_id);
+                    // console.assert(guild !== undefined, "Guild not found");
+                    let members2 = getServerMembers(guild_id);
+                    return respond(Array.from(members2.values(), m => m.nick || m.user.username || "????").join("\n"));
                 case 'table':
                     await (async () => {
                         /*const data = Array.from({ length: 26 }, (_, r) =>
@@ -196,10 +232,6 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                 case 'multi':
                     erisBot.createMessage(channel_id, "Wszyscy to widzą");
                     return secretRespond("A tego już nie");
-                case 'printUsers':
-                    const guild = erisBot.guilds.get(guild_id);
-                    console.assert(guild !== undefined, "Guild not found");
-                    return respond(Array.from(guild.members.values(), m => m.nick || m.user.username || "????").join("\n"));
             }
 
             console.error(`unknown command: ${name}`);

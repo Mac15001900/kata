@@ -1,6 +1,8 @@
 import 'dotenv/config';
 
-let lastAllUsersRequest = 0;
+let lastAllUsersRequests = {};
+let cachedMembers = {};
+global.cachedMembers = cachedMembers;
 
 export async function DiscordRequest(endpoint, options) {
     // append endpoint to root API URL
@@ -52,4 +54,18 @@ export function capitalize(str) {
 export function getRandomLetters(amount) {
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     return Array.from({ length: amount }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+}
+
+export function getServerMembers(guild_id) {
+    let lastRequest = lastAllUsersRequests[guild_id] || 0;
+    if (Date.now() - lastRequest < 32 * 1000) return cachedMembers[guild_id];
+    else {
+        const guild = erisBot.guilds.get(guild_id);
+        console.assert(guild !== undefined, "Guild not found " + guild_id);
+        let members = guild.members;
+        console.assert(members.size > 0, "No server members found on " + guild_id);
+        cachedMembers[guild_id] = members;
+        lastAllUsersRequests[guild_id] = Date.now();
+        return members;
+    }
 }

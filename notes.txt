@@ -30,3 +30,5 @@ https://github.com/abalabahaha/eris
 
 Potentially useful: node canvas
 https://github.com/Automattic/node-canvas
+
+Running a server on a tablet - https://stackoverflow.com/questions/36632649/running-node-js-on-android#41514825
