@@ -15,6 +15,8 @@ To update commands, run:
 npm run register
 Discord DMs update instantly; for server kick and re-invite the bot, or wait ~1 hour
 
+Bot developer portal:
+https://discord.com/developers/applications/1494000422640160999/information
 
 Command options docs:
 https://docs.discord.com/developers/interactions/application-commands#application-command-object-application-command-option-type

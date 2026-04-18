@@ -54,11 +54,23 @@ export class Tile {
 }
 
 export class Player {
-    constructor(name, startingX, startingY) {
+    constructor(name, startingX, startingY, discordId) {
         this.name = name;
         this.x = startingX;
         this.y = startingY;
         this.nickname = name;
+        this.discordId = discordId;
+
+        this.maxAp = 2;
+        this.maxCapacity = 1;
+        this.usedCapacity = 0;
+        this.equipment = [];
+    }
+
+    makeNameShorthand(fullName) {
+        let words = fullName.split(' ').filter(s => s.length > 2);
+        if (words.length < 2 || words[0].length < 2 || words[1].length < 2) return "U-????";
+        else return ("U-" + words[0][0] + words[0][1] + words[1][0] + words[1][1]).toUpperCase();
     }
 }
 

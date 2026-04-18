@@ -60,6 +60,23 @@ const AKCJA_COMMAND = {
   ],
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND, AKCJA_COMMAND];
+const DEBUG_COMMAND = {
+  name: 'debug',
+  description: 'Do debugowania',
+  type: 1,
+  integration_types: [0, 1],
+  contexts: [0, 1, 2],
+  default_member_permissions: 0,
+  options: [
+    {
+      type: 3,
+      name: 'command',
+      description: 'Wpisz komendę',
+      required: true,
+    },
+  ],
+};
+
+const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND, AKCJA_COMMAND, DEBUG_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);

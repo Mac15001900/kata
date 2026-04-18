@@ -28,13 +28,23 @@ state.counter = 0;
 let erisBotReady = false
 
 const TEST_CHANNEL = '1494003881695379620';
+const TEST_SERVER = '1494003881695379617';
+const SHOW_TABLE_ON_DISCORD = false;
+const BYPASS_MEMBER_GATHERING = false;
+
+global.TEST_CHANNEL = TEST_CHANNEL;
+global.TEST_SERVER = TEST_SERVER;
 
 //Setup Eris
 const erisBot = new Eris(process.env["DISCORD_TOKEN"], {
     intents: [
+        "guilds",
+        "guildMembers",
+        "guildPresences",
         "guildMessages"
     ]
 });
+global.erisBot = erisBot;
 
 erisBot.on("ready", () => { // When the bot is ready
     console.log("Erisbot ready!");
@@ -97,7 +107,7 @@ global.imageTest = function () {
  */
 app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async function (req, res) {
     // Interaction id, type and data
-    const { id, type, data, channel_id } = req.body;
+    const { id, type, data, channel_id, guild_id } = req.body;
     // console.log(req.body);
 
     /**
@@ -115,10 +125,7 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
         const { name } = data;
         console.log(data);
 
-        // "test" command
-        if (name === 'test') {
-            state.counter++;
-            // Send a message into the channel where command was triggered from
+        let respond = (text) => {
             return res.send({
                 type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
                 data: {
@@ -126,47 +133,41 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                     components: [
                         {
                             type: MessageComponentTypes.TEXT_DISPLAY,
-                            // Fetches a random emoji to send from a helper function
-                            content: `hello world ${getRandomEmoji()}. Counter is currently ${state.counter}`
+                            content: text
                         }
                     ]
                 },
             });
         }
+        let secretRespond = (text) => {
+            return res.send({
+                type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                data: {
+                    flags: InteractionResponseFlags.EPHEMERAL,
+                    content: text
+                }
+            });
+        }
+
+        // "test" command
+        if (name === 'test') {
+            state.counter++;
+            return respond(`hello world ${getRandomEmoji()}. Counter is currently ${state.counter}`);
+        }
 
         if (name === "akcja") {
             let actionString = data.options[0].value;
             console.log("Action used: " + actionString);
-            let respond = (text) => {
-                return res.send({
-                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                    data: {
-                        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-                        components: [
-                            {
-                                type: MessageComponentTypes.TEXT_DISPLAY,
-                                content: text
-                            }
-                        ]
-                    },
-                });
-            }
-            let secretRespond = (text) => {
-                return res.send({
-                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                    data: {
-                        flags: InteractionResponseFlags.EPHEMERAL,
-                        content: text
-                    }
-                });
-            }
+
 
             switch (actionString) {
                 case 'góra': return respond("Przemieszczas się w górę");
-                case 'secret': return secretRespond("Only you can see this!");
-                case 'multi':
-                    erisBot.createMessage(channel_id, "Wszyscy to widzą");
-                    return secretRespond("A tego już nie");
+                default: return respond("Nieistniejąca akcja: " + actionString);
+            }
+        }
+
+        if (name === "debug") {
+            switch (data.options[0].value) {
                 case 'table':
                     await (async () => {
                         /*const data = Array.from({ length: 26 }, (_, r) =>
@@ -181,23 +182,33 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                         const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
                         fs.writeFileSync('tableThing.png', buffer);
                     })();
-                    /*erisBot.createMessage(TEST_CHANNEL, {
-                        content: "Look at this map!"
-                    }, {
-                        name: "map.png",
-                        file: fs.readFileSync("./tableThing.png")
-                    });*/
+
+                    if (SHOW_TABLE_ON_DISCORD) {
+                        erisBot.createMessage(TEST_CHANNEL, {
+                            content: "Look at this map!"
+                        }, {
+                            name: "map.png",
+                            file: fs.readFileSync("./tableThing.png")
+                        });
+                    }
                     return secretRespond("Sending table...");
-                default: return respond("Nieistniejąca akcja: " + actionString);
+                case 'secret': return secretRespond("Only you can see this!");
+                case 'multi':
+                    erisBot.createMessage(channel_id, "Wszyscy to widzą");
+                    return secretRespond("A tego już nie");
+                case 'printUsers':
+                    const guild = erisBot.guilds.get(guild_id);
+                    console.assert(guild !== undefined, "Guild not found");
+                    return respond(Array.from(guild.members.values(), m => m.nick || m.user.username || "????").join("\n"));
             }
+
+            console.error(`unknown command: ${name}`);
+            return res.status(400).json({ error: 'unknown command' });
         }
 
-        console.error(`unknown command: ${name}`);
-        return res.status(400).json({ error: 'unknown command' });
+        console.error('unknown interaction type', type);
+        return res.status(400).json({ error: 'unknown interaction type' });
     }
-
-    console.error('unknown interaction type', type);
-    return res.status(400).json({ error: 'unknown interaction type' });
 });
 
 app.listen(PORT, () => {
