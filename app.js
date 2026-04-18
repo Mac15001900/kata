@@ -9,7 +9,7 @@ import {
     verifyKeyMiddleware,
 } from 'discord-interactions';
 import { getRandomEmoji, DiscordRequest, getRandomLetters } from './utils.js';
-import { getShuffledOptions, getResult } from './game.js';
+import { getShuffledOptions, getResult } from './examples/game.js';
 import Eris from "eris";
 import fs from 'fs';
 import { renderTableImage } from './drawTableImage.js';
