@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { ACTION } from './objects.js';
 
 let lastAllUsersRequests = {};
 let cachedMembers = {};
@@ -50,7 +51,7 @@ export function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-//Returns array of random letters
+//Returns a string of random letters
 export function getRandomLetters(amount) {
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     return Array.from({ length: amount }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
@@ -68,4 +69,12 @@ export function getServerMembers(guild_id) {
         lastAllUsersRequests[guild_id] = Date.now();
         return members;
     }
+}
+
+export function moveCoordinates(direction, x, y) {
+    if (typeof x === 'object') {
+        y = x[1];
+        x = x[0];
+    }
+    return [x + ((direction + 2) % 3) - 1, y + (Math.ceil(direction / 3) - 2)]
 }

@@ -16,6 +16,14 @@ export const FEATURE = {
     IRON: 5
 }
 
+const FEATURE_STRING = {};
+FEATURE_STRING[FEATURE.NONE] = "......";
+FEATURE_STRING[FEATURE.MOUNTAIN] = "./\\./\\.";
+FEATURE_STRING[FEATURE.FOREST] = "♣♣♣♣♣♣";
+FEATURE_STRING[FEATURE.LAKE] = "..__..";
+FEATURE_STRING[FEATURE.STONE] = ".o..o.";
+FEATURE_STRING[FEATURE.IRON] = ".I..I.";
+
 export const BIOME = {
     GRASSLAND: 0,
     DESERT: 1,
@@ -24,18 +32,62 @@ export const BIOME = {
     OCEAN: 4
 }
 
+export const ACTION = {
+    NONE: 0,
+
+    UŻYJ: 1,
+    POMÓŻ: 2,
+    PRACUJ: 3,
+
+    SZUKAJ: 10,
+    ZBIERAJ: 11,
+    KOP: 12,
+    EKWIPUNEK: 13,
+    WEŹ: 14,
+    WYRZUĆ: 15,
+    DODAJ: 16,
+
+    IDŹ: 20,
+    PRZYZWIJ: 21,
+    TELEPORTUJ: 22,
+
+    BUDUJ: 30,
+    TWÓRZ: 31,
+}
+
+export const DIRECTION = {
+    DOWN_LEFT: 1,
+    DOWN: 2,
+    DOWN_RIGHT: 3,
+    LEFT: 4,
+    NONE: 5,
+    RIGHT: 6,
+    UP_LEFT: 7,
+    UP: 8,
+    UP_RIGHT: 9
+}
+
 export class Tile {
-    constructor(x, y, biome, feature) {
+    constructor(x, y, biome, feature, buildings = []) {
         this.x = x;
         this.y = y;
         this.biome = biome;
         this.feature = feature;
         this.players = [];
-        this.buildings = [];
+        this.buildings = buildings;
     }
 
     updatePlayers(players) {
         this.players = players.filter(p => p.x === this.x && p.y === this.y);
+    }
+
+    updateOnePlayer(player) {
+        if (player.x === this.x && player.y === this.y) {
+            if (!this.players.includes(player)) this.players.push(player);
+        } else {
+            let index = this.players.indexOf(player);
+            if (index > -1) this.players.splice(index, 1);
+        }
     }
 
     printTile() {
@@ -46,9 +98,14 @@ export class Tile {
             if (this.players[0]) res[0] = this.players[0].name;
             if (this.players[1]) res[1] = this.players[1].name;
         }
-        // res[2] = "Osada 99"
-        res[3] = "......"; //Add terrain features here
+        if (this.hasBuilding(BUILDING.ALTAR)) res[2] = "/‾‾‾‾\\";
+
+        res[3] = FEATURE_STRING[this.feature];
         return res.join('\n');
+    }
+
+    hasBuilding(type) {
+        return this.buildings.includes(type);
     }
 }
 
@@ -74,8 +131,12 @@ export class Board {
         return this.tiles[x][y];
     }
 
+    /**
+     * 
+     * @returns An array of strings to be printed as the map. Reverses the order of rows, so y=0 will end up at the bottom.
+     */
     printableData() {
-        return this.tiles.map(row => row.map(tile => tile.printTile()));
+        return this.tiles.map(row => row.map(tile => tile.printTile())).reverse();
     }
 
     foreach(f) {
@@ -84,6 +145,10 @@ export class Board {
                 f(this.tiles[y][x], x, y);
             }
         }
+    }
+
+    updateOnePlayer(player) {
+        this.foreach(t => t.updateOnePlayer(player));
     }
 }
 
@@ -94,8 +159,10 @@ export class Player {
         this.y = startingY;
         this.discordId = discordId;
 
-        this.maxAp = 2;
+        this.maxActions = 1;
         this.maxCapacity = 1;
+
+        this.usedActions = 0;
         this.usedCapacity = 0;
         this.equipment = [];
     }

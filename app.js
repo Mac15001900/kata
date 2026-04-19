@@ -173,13 +173,16 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
             let input = data.options[0].value;
             let command = data.options[0].value.split(' ')[0];
             let options = data.options[0].value.split(' ').slice(1);
+            let showMap = false;
             switch (command) {
                 //Useful options
+                case 'printMap':
+                    showMap = true;
                 case 'map':
                     const data = game.board.printableData();
                     const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
                     fs.writeFileSync('tableThing.png', buffer);
-                    if (SHOW_TABLE_ON_DISCORD) {
+                    if (showMap) {
                         erisBot.createMessage(TEST_CHANNEL, {
                             content: "Look at this map!"
                         }, {
@@ -232,6 +235,8 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                 case 'multi':
                     erisBot.createMessage(channel_id, "Wszyscy to widzą");
                     return secretRespond("A tego już nie");
+                default:
+                    return secretRespond("Unknown debug command: " + command);
             }
 
             console.error(`unknown command: ${name}`);
