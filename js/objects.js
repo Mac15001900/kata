@@ -101,10 +101,11 @@ export class Tile {
             if (this.players[0]) res[0] = this.players[0].name;
             if (this.players[1]) res[1] = this.players[1].name;
         }
-        if (this.hasBuilding(BUILDING.ALTAR)) res[2] = "/‾‾‾‾\\";
+        // if (this.hasBuilding(BUILDING.ALTAR)) res[2] = "/‾‾‾‾\\";
         // res[2] = `X:${this.x} | Y:${this.y}`;
 
-        res[3] = FEATURE_STRING[this.feature];
+        // res[3] = FEATURE_STRING[this.feature];
+        res[3] = this.biome;
         return res.join('\n');
     }
 

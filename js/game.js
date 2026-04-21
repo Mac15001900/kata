@@ -1,6 +1,7 @@
 import { Tile, Board, Player, BUILDING, FEATURE, BIOME, ACTION } from "./objects.js"
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
 import { moveCoordinates } from "./utils.js";
+import fs from 'fs';
 
 export class Game {
     constructor(opts) {
@@ -9,6 +10,8 @@ export class Game {
             mapHeight: 26,
             biomeWeights: {},
             featureWeigths: {},
+            mapFile: './mapCreation/map.json',
+            // mapFile: './mapCreation/testMap.json',
         };
         defaults.biomeWeights[BIOME.GRASSLAND] = 2;
         defaults.biomeWeights[BIOME.DESERT] = 1;
@@ -24,7 +27,8 @@ export class Game {
         defaults.featureWeigths[FEATURE.IRON] = 1;
         const config = Object.assign({}, defaults, opts);
         this.config = config;
-        this.board = this.generateBoard(config.mapWidth, config.mapHeight);
+        // this.board = this.generateBoard(config.mapWidth, config.mapHeight);
+        this.board = this.buildBoardFromFile(config.mapFile);
         this.players = [];
     }
 
@@ -117,6 +121,16 @@ export class Game {
         return new Board(tiles);
     }
 
+    buildBoardFromFile(path) {
+        let rawdata = fs.readFileSync(path);
+        let mapJson = JSON.parse(rawdata).layers[0];
+        let width = mapJson.width;
+        let height = mapJson.height;
+        let tiles = Array.from({ length: height }, (_, y) =>
+            Array.from({ length: width }, (_, x) => new Tile(x, y, mapJson.data[mapJson.data.length - (y + 1) * width + x], FEATURE.NONE)));
+        return new Board(tiles);
+    }
+
     addDiscordMemberAsPlayer(member, x, y) {
         //Check if this player already exists
         if (this.players.find(p => p.discordId === member.id) !== undefined) return;
@@ -154,6 +168,5 @@ export class Game {
         }
         console.error("Logical error in pickWeighted");
     }
-
 
 }
