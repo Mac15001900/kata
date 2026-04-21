@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { getRPSChoices } from './examples/game.js';
 import { capitalize, InstallGlobalCommands } from './utils.js';
-
+/*
 // Get the game choices from game.js
 function createCommandChoices() {
   const choices = getRPSChoices();
@@ -16,16 +16,7 @@ function createCommandChoices() {
 
   return commandChoices;
 }
-
-// Simple test command
-const TEST_COMMAND = {
-  name: 'test',
-  description: 'Basic command',
-  type: 1,
-  integration_types: [0, 1],
-  contexts: [0, 1, 2],
-};
-
+  
 // Command containing options
 const CHALLENGE_COMMAND = {
   name: 'challenge',
@@ -41,15 +32,35 @@ const CHALLENGE_COMMAND = {
   ],
   type: 1,
   integration_types: [0, 1],
-  contexts: [0, 2],
+  contexts: [0],
 };
+
+*/
+
+// Simple test command
+const TEST_COMMAND = {
+  name: 'test',
+  description: 'Basic command',
+  type: 1,
+  integration_types: [0, 1],
+  contexts: [0, 1, 2],
+};
+
+const PATRZ_COMMAND = {
+  name: 'patrz',
+  description: 'Rozejrzyj się dookoła',
+  type: 1,
+  integration_types: [0, 1],
+  contexts: [0],
+};
+
 
 const AKCJA_COMMAND = {
   name: 'akcja',
   description: 'Robi akcję',
   type: 1,
   integration_types: [0, 1],
-  contexts: [0, 1, 2],
+  contexts: [0],
   options: [
     {
       type: 3,
@@ -65,7 +76,7 @@ const DEBUG_COMMAND = {
   description: 'Do debugowania',
   type: 1,
   integration_types: [0, 1],
-  contexts: [0, 1, 2],
+  contexts: [0],
   default_member_permissions: 0,
   options: [
     {
@@ -77,6 +88,6 @@ const DEBUG_COMMAND = {
   ],
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND, AKCJA_COMMAND, DEBUG_COMMAND];
+const ALL_COMMANDS = [TEST_COMMAND, PATRZ_COMMAND, AKCJA_COMMAND, DEBUG_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);

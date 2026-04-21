@@ -38,6 +38,11 @@ global.game = game;
 global.TEST_CHANNEL = TEST_CHANNEL;
 global.TEST_SERVER = TEST_SERVER;
 
+const DEBUG = {
+    addMacOnStart: true,
+    updateMapOnAction: true,
+}
+
 //Setup Eris
 const erisBot = new Eris(process.env["DISCORD_TOKEN"], {
     intents: [
@@ -52,6 +57,13 @@ global.erisBot = erisBot;
 erisBot.on("ready", () => { // When the bot is ready
     console.log("Erisbot ready!");
     erisBotReady = true;
+    if (DEBUG.addMacOnStart) {
+        let guild = erisBot.guilds.get('1494003881695379617');
+        console.assert(guild);
+        guild.fetchMembers({ limit: 1, userIDs: '214819068727787523' }).
+            then(m => m[0] ? game.addDiscordMemberAsPlayer(m[0]) : '');
+    }
+
 });
 
 
@@ -110,8 +122,8 @@ global.imageTest = function () {
  */
 app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async function (req, res) {
     // Interaction id, type and data
-    const { id, type, data, channel_id, guild_id } = req.body;
-    // console.log(req.body);
+    const { id, type, data, channel_id, guild_id, member } = req.body;
+    console.log(req.body);
 
     /**
      * Handle verification requests
@@ -162,10 +174,17 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
             let actionString = data.options[0].value;
             console.log("Action used: " + actionString);
 
-
-            switch (actionString) {
-                case 'góra': return respond("Przemieszczas się w górę");
-                default: return respond("Nieistniejąca akcja: " + actionString);
+            let result = game.processAction(actionString, member.user.id);
+            if (DEBUG.updateMapOnAction) updateMapFile();
+            if (result.respond && result.secret) {
+                erisBot.createMessage(channel_id, result.respond);
+                return secretRespond(result.secret);
+            } else if (result.respond) {
+                return respond(result.respond);
+            } else if (result.secret) {
+                return secretRespond(result.secret);
+            } else {
+                return secretRespond("Coś poszło nie tak. Jeśli widzisz tą wiadomość, to gra nie wyprodukowała żadnej odpowiedzi na tą akcję (a powinna, nawet na te nieistniejące). Daj znać Maćkowi.");
             }
         }
 
@@ -179,9 +198,7 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                 case 'printMap':
                     showMap = true;
                 case 'map':
-                    const data = game.board.printableData();
-                    const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
-                    fs.writeFileSync('tableThing.png', buffer);
+                    updateMapFile();
                     if (showMap) {
                         erisBot.createMessage(TEST_CHANNEL, {
                             content: "Look at this map!"
@@ -215,7 +232,7 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                         );*/
                         const players = makeRandomPlayers(85, 20, 26);
                         const tiles = Array.from({ length: 26 }, (_, r) =>
-                            Array.from({ length: 20 }, (_, c) => new Tile(c, r, BIOME.GRASSLAND, FEATURE.NONE)));
+                            Array.from({ length: 20 }, (_, c) => new Tile(c, r, BIOME.RED, FEATURE.NONE)));
                         tiles.forEach(row => row.forEach(t => t.updatePlayers(players)));
                         const data = tiles.map(row => row.map(tile => tile.printTile()));
                         const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
@@ -251,3 +268,9 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
 app.listen(PORT, () => {
     console.log('Listening on port', PORT);
 });
+
+async function updateMapFile() {
+    const data = game.board.printableData();
+    const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
+    fs.writeFileSync('tableThing.png', buffer);
+}

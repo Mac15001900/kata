@@ -25,11 +25,14 @@ FEATURE_STRING[FEATURE.STONE] = ".o..o.";
 FEATURE_STRING[FEATURE.IRON] = ".I..I.";
 
 export const BIOME = {
-    GRASSLAND: 0,
-    DESERT: 1,
-    SWAMP: 2,
-    SNOW: 3,
-    OCEAN: 4
+    VOID: 0,
+    RED: 1, //Redwoods
+    ORANGE: 2, //Land of honey
+    YELLOW: 3, //Marble and gold (clues live there)
+    GREEN: 4, //Giant lily-pads
+    CYAN: 5, //Glass spacetime-bendy place
+    BLUE: 6, //Chill place with blue grass
+    VIOLET: 7,
 }
 
 export const ACTION = {
@@ -99,6 +102,7 @@ export class Tile {
             if (this.players[1]) res[1] = this.players[1].name;
         }
         if (this.hasBuilding(BUILDING.ALTAR)) res[2] = "/‾‾‾‾\\";
+        // res[2] = `X:${this.x} | Y:${this.y}`;
 
         res[3] = FEATURE_STRING[this.feature];
         return res.join('\n');
@@ -112,6 +116,8 @@ export class Tile {
 export class Board {
     constructor(tiles) {
         this.tiles = tiles;
+        this.width = tiles[0].length;
+        this.height = tiles.length;
     }
 
     has(x, y) {
@@ -128,7 +134,7 @@ export class Board {
             x = x[0];
         }
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) return undefined;
-        return this.tiles[x][y];
+        return this.tiles[y][x];
     }
 
     /**

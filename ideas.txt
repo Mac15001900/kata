@@ -1,2 +1,14 @@
 Chromatic power orb - has to be infused in a biome for each rainbow colour, in order
 House - built from wood and stone. Can store 4 items, grants "well rested", maybe has a kitchen
+
+Biomes:
+Orange - honey land
+Yellow - huge field of wheat-like grass
+Green - swampy thing with giant lily pads
+Blue - land of blue grass with various hues
+
+One that's mostly glass?
+A space-bendy one that allows teleportation
+Big stone pyramid-ish thing that holds clues
+
+Magical ball that knows a spell. You can give a it word, and it will tell you which letters are correct, wordle style.

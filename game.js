@@ -36,12 +36,12 @@ export class Game {
      */
     processAction(inputString, userId) {
         let player = this.getPlayerById(userId);
-        if (!player) return { secret: "Jeśli widzisz tą wiadomość, to znaczy, że o ile masz dostęp do tego kanału, a jakiegoś powodu nie ma cię w grze.\nJeśli jesteś kadronem, to normalne.\nJeśli jesteś uczestnikiem, to coś tu poszło nie tak. Daj znać Maćkowi." };
+        if (!player) return { secret: "Jeśli widzisz tą wiadomość, to znaczy, że o ile masz dostęp do tego kanału, z jakiegoś powodu nie ma cię w grze.\nJeśli jesteś kadronem, to normalne.\nJeśli jesteś uczestnikiem, to coś tu poszło nie tak. Daj znać Maćkowi." };
 
         let command = getCommandFromString(inputString.split(" ")[0]);
+        console.assert(command !== undefined, "Command not recognized: " + inputString.split(" ")[0]);
         let options = inputString.split(" ").slice(1);
         if (options[0] === "się") options.splice(1);
-        player.remainingActions;
         let cost = getActionCost(command);
 
         if (player.remainingActions === 0 && cost !== 0) {
@@ -85,8 +85,8 @@ export class Game {
             case ACTION.IDŹ:
                 let newPos = moveCoordinates(getDirectionFromString(options[0]), player.x, player.y);
                 if (this.board.has(newPos)) {
-                    player.x = newPos.x;
-                    player.y = newPos.y;
+                    player.x = newPos[0];
+                    player.y = newPos[1];
                     this.board.updateOnePlayer(player);
                     return { respond: base + success };
                 } else {
@@ -105,7 +105,7 @@ export class Game {
                 return { respond: base + "TODO" };
             default:
                 player.remainingActions += cost;
-                return { secret: "Coś poszło nie tak. Jeśli widzisz tą wiadomość, to jest to błąd w grze. Daj znać Maćkowi." };
+                return { secret: "Coś poszło nie tak. Jeśli widzisz tą wiadomość, to akcja nie została rozpoznana. Daj znać Maćkowi." };
         }
 
 
@@ -113,7 +113,7 @@ export class Game {
 
     generateBoard(width, height) {
         let tiles = Array.from({ length: height }, (_, r) =>
-            Array.from({ length: width }, (_, c) => this.makeRandomTile(r, c)));
+            Array.from({ length: width }, (_, c) => this.makeRandomTile(c, r)));
         return new Board(tiles);
     }
 

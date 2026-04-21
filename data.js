@@ -1,6 +1,8 @@
 import { Tile, Board, Player, BUILDING, FEATURE, BIOME, ACTION, DIRECTION } from "./objects.js"
+import { removePolishCharacters } from "./utils.js";
 
 export function getCommandFromString(string) {
+    let testString = removePolishCharacters(string.toLowerCase());
     let s = {};
     s[ACTION.UŻYJ] = 'użyj wykorzystaj';
     s[ACTION.POMÓŻ] = 'pomóż pomoc pomagaj';
@@ -22,7 +24,7 @@ export function getCommandFromString(string) {
     s[ACTION.TWÓRZ] = 'twórz stwórz zrób';
 
     for (let key in s) {
-        if (s[key].split(' ').includes(string.toLowerCase())) return key;
+        if (removePolishCharacters(s[key]).split(' ').includes(testString)) return Number(key);
     }
     return ACTION.NONE;
 }
@@ -33,14 +35,15 @@ export function getActionCost(action) {
 }
 
 export function getDirectionFromString(string) {
+    let testString = removePolishCharacters(string.toLowerCase());
     let s = {};
-    s[DIRECTION.DOWN] = 'dół d południe';
-    s[DIRECTION.LEFT] = 'lewo l zachód';
-    s[DIRECTION.RIGHT] = 'prawo p wschód';
-    s[DIRECTION.UP] = 'góra g północ';
+    s[DIRECTION.DOWN] = 'dół d południe s';
+    s[DIRECTION.LEFT] = 'lewo l zachód w';
+    s[DIRECTION.RIGHT] = 'prawo p wschód e';
+    s[DIRECTION.UP] = 'góra g północ n';
 
     for (let key in s) {
-        if (s[key].split(' ').includes(string.toLowerCase())) return key;
+        if (removePolishCharacters(s[key]).split(' ').includes(testString)) return Number(key);
     }
     return DIRECTION.NONE;
 }

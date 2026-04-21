@@ -78,3 +78,7 @@ export function moveCoordinates(direction, x, y) {
     }
     return [x + ((direction + 2) % 3) - 1, y + (Math.ceil(direction / 3) - 2)]
 }
+
+export function removePolishCharacters(string) {
+    return string.replace(/[\u0104\u0105]/g, 'a').replace(/[\u0106\u0107]/g, 'c').replace(/[\u0118\u0119]/g, 'e').replace(/[\u0141\u0142]/g, 'l').replace(/[\u0143\u0144]/g, 'n').replace(/[\u00D3\u00F3]/g, 'o').replace(/[\u015A\u015B]/g, 's').replace(/[\u0179\u017A\u017B\u017C]/g, 'z').replace(/[\u017D\u017E]/g, 'z');
+}
