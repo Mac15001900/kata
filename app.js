@@ -8,13 +8,13 @@ import {
     MessageComponentTypes,
     verifyKeyMiddleware,
 } from 'discord-interactions';
-import { getRandomEmoji, DiscordRequest, getRandomLetters, getServerMembers } from './utils.js';
+import { getRandomEmoji, DiscordRequest, getRandomLetters, getServerMembers } from './js/utils.js';
 import { getShuffledOptions, getResult } from './examples/game.js';
 import Eris from "eris";
 import fs from 'fs';
-import { renderTableImage } from './drawTableImage.js';
-import { BUILDING, FEATURE, BIOME, Tile, Player, makeRandomPlayers } from './objects.js';
-import { Game } from './game.js';
+import { renderTableImage } from './js/drawTableImage.js';
+import { BUILDING, FEATURE, BIOME, Tile, Player, makeRandomPlayers } from './js/objects.js';
+import { Game } from './js/game.js';
 
 // Create an express app
 const app = express();
