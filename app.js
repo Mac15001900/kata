@@ -74,7 +74,7 @@ erisBot.on("error", (err) => {
 
 erisBot.connect();
 
-global.test = function (text) {
+global.messageTest = function (text) {
     console.log("attempting to send " + text);
     erisBot.createMessage(TEST_CHANNEL, text);
 }

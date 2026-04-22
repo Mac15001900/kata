@@ -42,6 +42,11 @@ export class Tile {
     hasBuilding(type) {
         return this.buildings.includes(type);
     }
+
+    startConstruction(buildingData) {
+        console.log(`Started construction of a ${buildingData.name} at ${this.x},${this.y}`);
+        //TODO
+    }
 }
 
 export class Board {

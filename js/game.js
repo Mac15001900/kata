@@ -1,6 +1,7 @@
+import { BUILDING_DATA } from "../data/building.js";
 import { Tile, Board, Player } from "./objects.js"
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
-import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem } from "./utils.js";
+import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, parseItemList, arraysEqual } from "./utils.js";
 import fs from 'fs';
 import { BIOME, ACTION, DIRECTION } from './enums.js';
 import { BIOME_DATA } from "../data/biomes.js";
@@ -128,7 +129,18 @@ export class Game {
 
 
             case ACTION.BUDUJ:
-                return { respond: base + "TODO" };
+                if (!options[0]) return { secret: "Wybierz, jakich materiałów chcesz użyć." };
+                let itemList = parseItemList(options.join(' '));
+                if (!itemList) return { respond: base + "Niestety, plany nie udają się, bo lista materiałów zawierała przedmiot, który nie istnieje." };
+
+                let building = null;
+                for (let i = 0; i < BUILDING_DATA.length; i++) {
+                    if (arraysEqual(BUILDING_DATA[i].cost, itemList)) {
+                        currentTile.startConstruction(BUILDING_DATA[i]);
+                        return { respond: base + `Zaczynasz budować ${BUILDING_DATA[i].name}.` };
+                    }
+                }
+                return { respond: base + `Niestety, ta lista materiałów nie odpowiada żadnemu budynkowi.` };
             case ACTION.TWÓRZ:
                 return { respond: base + "TODO" };
             default:

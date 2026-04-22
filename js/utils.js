@@ -95,3 +95,41 @@ export function itemFromString(string) {
 export function printItem(item) {
     return capitalize(item).replace(/_/g, ' ');
 }
+
+/**
+ * Converts a user-inputted list of space-separated items to an array of ITEMs. 
+ * This is made slightly more complicated by item names that include spaces.
+ * @param {String} string 
+ * @returns {ITEM[] | undefined} An array of ITEMs if parsing was successful, or undefined if parsing failed
+ */
+export function parseItemList(string) {
+    let res = [];
+    let words = string.replace(/[,;|]/g, ' ').split(' ');
+    let buffer = '';
+    while (words.length > 0) {
+        let word = words.shift();
+        if (word === '') continue;
+        let simpleItem = itemFromString(buffer + word);
+        if (simpleItem) {
+            res.push(simpleItem);
+            buffer = '';
+        } else {
+            buffer += word + ' ';
+        }
+    }
+    if (buffer.length > 0) return undefined;
+
+    return res;
+}
+
+export function arraysEqual(ar, br) {
+    if (ar === br) return true;
+    let a = ar.toSorted(), b = br.toSorted();
+    if (a == null || b == null) return false;
+    if (a.length != b.length) return false;
+
+    for (let i = 0; i < a.length; ++i) {
+        if (a[i] !== b[i]) return false;
+    }
+    return true;
+}
