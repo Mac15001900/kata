@@ -13,8 +13,9 @@ import { getShuffledOptions, getResult } from './examples/game.js';
 import Eris from "eris";
 import fs from 'fs';
 import { renderTableImage } from './js/drawTableImage.js';
-import { BUILDING, FEATURE, BIOME, Tile, Player, makeRandomPlayers } from './js/objects.js';
+import { Tile, Player, makeRandomPlayers } from './js/objects.js';
 import { Game } from './js/game.js';
+import { BIOME, ACTION, DIRECTION } from './js/enums.js';
 
 // Create an express app
 const app = express();
@@ -232,7 +233,7 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                         );*/
                         const players = makeRandomPlayers(85, 20, 26);
                         const tiles = Array.from({ length: 26 }, (_, r) =>
-                            Array.from({ length: 20 }, (_, c) => new Tile(c, r, BIOME.RED, FEATURE.NONE)));
+                            Array.from({ length: 20 }, (_, c) => new Tile(c, r, BIOME.RED)));
                         tiles.forEach(row => row.forEach(t => t.updatePlayers(players)));
                         const data = tiles.map(row => row.map(tile => tile.printTile()));
                         const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });

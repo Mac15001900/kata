@@ -1,7 +1,8 @@
-import { Tile, Board, Player, BUILDING, FEATURE, BIOME, ACTION } from "./objects.js"
+import { Tile, Board, Player } from "./objects.js"
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
 import { moveCoordinates } from "./utils.js";
 import fs from 'fs';
+import { BIOME, ACTION, DIRECTION } from './enums.js';
 
 export class Game {
     constructor(opts) {
@@ -9,7 +10,6 @@ export class Game {
             mapWidth: 20,
             mapHeight: 26,
             biomeWeights: {},
-            featureWeigths: {},
             mapFile: './mapCreation/map.json',
             // mapFile: './mapCreation/testMap.json',
         };
@@ -19,12 +19,6 @@ export class Game {
         defaults.biomeWeights[BIOME.SNOW] = 1;
         defaults.biomeWeights[BIOME.OCEAN] = 0.5;
 
-        defaults.featureWeigths[FEATURE.NONE] = 10;
-        defaults.featureWeigths[FEATURE.MOUNTAIN] = 1;
-        defaults.featureWeigths[FEATURE.FOREST] = 1;
-        defaults.featureWeigths[FEATURE.LAKE] = 1;
-        defaults.featureWeigths[FEATURE.STONE] = 1;
-        defaults.featureWeigths[FEATURE.IRON] = 1;
         const config = Object.assign({}, defaults, opts);
         this.config = config;
         // this.board = this.generateBoard(config.mapWidth, config.mapHeight);
@@ -127,7 +121,7 @@ export class Game {
         let width = mapJson.width;
         let height = mapJson.height;
         let tiles = Array.from({ length: height }, (_, y) =>
-            Array.from({ length: width }, (_, x) => new Tile(x, y, mapJson.data[mapJson.data.length - (y + 1) * width + x], FEATURE.NONE)));
+            Array.from({ length: width }, (_, x) => new Tile(x, y, mapJson.data[mapJson.data.length - (y + 1) * width + x])));
         return new Board(tiles);
     }
 
@@ -149,10 +143,7 @@ export class Game {
 
     makeRandomTile(x, y) {
         let biome = this.pickWeighted(this.config.biomeWeights);
-        let feature = this.pickWeighted(this.config.featureWeigths);
-        let hasAltar = Math.random() > 0.95;
-        let buildings = hasAltar ? [BUILDING.ALTAR] : [];
-        return new Tile(x, y, biome, feature, buildings);
+        return new Tile(x, y, biome);
     }
 
     pickWeighted(options) {

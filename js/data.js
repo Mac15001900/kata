@@ -1,5 +1,6 @@
-import { Tile, Board, Player, BUILDING, FEATURE, BIOME, ACTION, DIRECTION } from "./objects.js"
+import { Tile, Board, Player } from "./objects.js"
 import { removePolishCharacters } from "./utils.js";
+import { BIOME, ACTION, DIRECTION } from './enums.js';
 
 export function getCommandFromString(string) {
     let testString = removePolishCharacters(string.toLowerCase());
@@ -14,9 +15,10 @@ export function getCommandFromString(string) {
     s[ACTION.EKWIPUNEK] = 'ekwipunek eq e przedmioty';
     s[ACTION.WEŹ] = 'weź podnieś';
     s[ACTION.WYRZUĆ] = 'wyrzuć porzuć odrzuć pozbądź';
-    s[ACTION.DODAJ] = 'dodaj dorzuć';
+    s[ACTION.DODAJ] = 'dodaj dorzuć wrzuć połóż';
+    s[ACTION.ZJEDZ] = 'zjedz jedz spożyj';
 
-    s[ACTION.IDŹ] = 'idź chodź';
+    s[ACTION.IDŹ] = 'idź idx chodź';
     s[ACTION.PRZYZWIJ] = 'przyzwij przyzywaj przywołaj sprowadź';
     s[ACTION.TELEPORTUJ] = 'teleportuj teleportacja';
 

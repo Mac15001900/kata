@@ -1,4 +1,4 @@
-import { BIOME } from "../js/objects";
+import { BIOME } from "../js/enums.js"
 
 export const BIOME_DATA = {}
 
@@ -15,7 +15,7 @@ BIOME_DATA[BIOME.RED] = {
 BIOME_DATA[BIOME.ORANGE] = {
     id: BIOME.ORANGE,
     heart: ':orange_heart:',
-    mapString: "-◠-◠-◠-",
+    mapString: "--M--M--",
     lookDescription: `TODO jest tu dużo miodu TODO`,
     harvestLoot: [],
     searchLoot: [],
@@ -26,7 +26,7 @@ BIOME_DATA[BIOME.ORANGE] = {
 BIOME_DATA[BIOME.YELLOW] = {
     id: BIOME.YELLOW,
     heart: ':yellow_heart:',
-    mapString: "▁▂▂▃▂▂▁",
+    mapString: "___----___",
     lookDescription: `TODO jest to duży marmurowy blok ze złotymi zdobieniami TODO`,
     harvestLoot: [],
     searchLoot: [],
@@ -46,7 +46,7 @@ BIOME_DATA[BIOME.GREEN] = {
 BIOME_DATA[BIOME.CYAN] = {
     id: BIOME.CYAN,
     heart: ':light_blue_h:eart',
-    mapString: "∆_∇∆∇_∆",
+    mapString: "∆__∆__∆",
     lookDescription: `TODO latające szkło i zakrzywiona czasoprzestrzeń TODO`,
     harvestLoot: [],
     searchLoot: [],
@@ -56,7 +56,7 @@ BIOME_DATA[BIOME.CYAN] = {
 BIOME_DATA[BIOME.BLUE] = {
     id: BIOME.BLUE,
     heart: ':blue_heart:',
-    mapString: "_I__I_",
+    mapString: "__I__I__",
     lookDescription: `TODO niebieska trawa z metalowymi pilarami TODO`,
     harvestLoot: [],
     searchLoot: [],
@@ -66,7 +66,7 @@ BIOME_DATA[BIOME.BLUE] = {
 BIOME_DATA[BIOME.VIOLET] = {
     id: BIOME.VIOLET,
     heart: ':purple_heart:',
-    mapString: "✧･ﾟ: *✧･ﾟ:*",
+    mapString: "xx.x.xx",
     lookDescription: `TODO niezdefiniowane magiczne coś TODO`,
     harvestLoot: [],
     searchLoot: [],

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { ACTION } from './objects.js';
+import { BIOME, ACTION, DIRECTION } from './enums.js';
 
 let lastAllUsersRequests = {};
 let cachedMembers = {};

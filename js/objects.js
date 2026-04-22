@@ -1,81 +1,12 @@
 import { getRandomLetters } from './utils.js';
-
-export const BUILDING = {
-    NONE: 0,
-    HOUSE: 1,
-    TELEPORTER: 2,
-    ALTAR: 3
-}
-
-export const FEATURE = {
-    NONE: 0,
-    MOUNTAIN: 1,
-    FOREST: 2,
-    LAKE: 3,
-    STONE: 4,
-    IRON: 5
-}
-
-const FEATURE_STRING = {};
-FEATURE_STRING[FEATURE.NONE] = "......";
-FEATURE_STRING[FEATURE.MOUNTAIN] = "./\\./\\.";
-FEATURE_STRING[FEATURE.FOREST] = "♣♣♣♣♣♣";
-FEATURE_STRING[FEATURE.LAKE] = "..__..";
-FEATURE_STRING[FEATURE.STONE] = ".o..o.";
-FEATURE_STRING[FEATURE.IRON] = ".I..I.";
-
-export const BIOME = {
-    VOID: 0,
-    RED: 1, //Redwoods
-    ORANGE: 2, //Land of honey
-    YELLOW: 3, //Marble and gold (clues live there)
-    GREEN: 4, //Giant lily-pads
-    CYAN: 5, //Glass spacetime-bendy place
-    BLUE: 6, //Chill place with blue grass
-    VIOLET: 7,
-}
-
-export const ACTION = {
-    NONE: 0,
-
-    UŻYJ: 1,
-    POMÓŻ: 2,
-    PRACUJ: 3,
-
-    SZUKAJ: 10,
-    ZBIERAJ: 11,
-    KOP: 12,
-    EKWIPUNEK: 13,
-    WEŹ: 14,
-    WYRZUĆ: 15,
-    DODAJ: 16,
-
-    IDŹ: 20,
-    PRZYZWIJ: 21,
-    TELEPORTUJ: 22,
-
-    BUDUJ: 30,
-    TWÓRZ: 31,
-}
-
-export const DIRECTION = {
-    DOWN_LEFT: 1,
-    DOWN: 2,
-    DOWN_RIGHT: 3,
-    LEFT: 4,
-    NONE: 5,
-    RIGHT: 6,
-    UP_LEFT: 7,
-    UP: 8,
-    UP_RIGHT: 9
-}
+import { BIOME_DATA } from '../data/biomes.js';
+import { BIOME, ACTION, DIRECTION } from './enums.js';
 
 export class Tile {
-    constructor(x, y, biome, feature, buildings = []) {
+    constructor(x, y, biome, buildings = []) {
         this.x = x;
         this.y = y;
         this.biome = biome;
-        this.feature = feature;
         this.players = [];
         this.buildings = buildings;
     }
@@ -101,11 +32,9 @@ export class Tile {
             if (this.players[0]) res[0] = this.players[0].name;
             if (this.players[1]) res[1] = this.players[1].name;
         }
-        // if (this.hasBuilding(BUILDING.ALTAR)) res[2] = "/‾‾‾‾\\";
         // res[2] = `X:${this.x} | Y:${this.y}`;
 
-        // res[3] = FEATURE_STRING[this.feature];
-        res[3] = this.biome;
+        res[3] = BIOME_DATA[this.biome].mapString;
         return res.join('\n');
     }
 
