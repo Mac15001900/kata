@@ -1,8 +1,9 @@
 import { Tile, Board, Player } from "./objects.js"
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
-import { moveCoordinates } from "./utils.js";
+import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem } from "./utils.js";
 import fs from 'fs';
 import { BIOME, ACTION, DIRECTION } from './enums.js';
+import { BIOME_DATA } from "../data/biomes.js";
 
 export class Game {
     constructor(opts) {
@@ -51,7 +52,12 @@ export class Game {
         //The action does happen
         let base = `${player.name} używa akcji \`${inputString}\`.\n`;
         let success = "Akcja udaje się.";
+        let freeAction = "\n\nᵀᵃ ᵃᵏᶜʲᵃ ʲᵉˢᵗ ᵈᵃʳᵐᵒʷᵃ";
         player.remainingActions -= cost; //By default we subtract the cost. If an action doesn't proceed it can refund it.
+
+        let currentTile = this.board.get(player.x, player.y);
+        let currentBiome = currentTile.biome;
+
         switch (command) {
             case ACTION.NONE:
                 return { respond: base + "Niestety okazuje się, że ta akcji nic nie robi." };
@@ -65,17 +71,39 @@ export class Game {
 
 
             case ACTION.SZUKAJ:
-                return { respond: base + "TODO" };
+                const lightLootPool = BIOME_DATA[currentBiome].searchLoot;
+                //TODO - check for appropriate tools to potentially apply bonuses
+                let newItem2 = lightLootPool[Math.floor(Math.random() * lightLootPool.length)];
+                player.addLightItem(newItem2);
+                return { respond: base + "Znajdujesz 1x " + capitalize(newItem2) };
             case ACTION.ZBIERAJ:
-                return { respond: base + "TODO" };
+                if (player.availableCapacity() <= 0) {
+                    return { respond: base + " Niestety, nie masz w ekwipunku miejsca na żadną znalezioną rzecz." };
+                }
+                const heavyLootPool = BIOME_DATA[currentBiome].harvestLoot;
+                //TODO - check for appropriate tools to potentially apply bonuses
+                let newItem = heavyLootPool[Math.floor(Math.random() * heavyLootPool.length)];
+                player.addHeavyItem(newItem);
+                return { respond: base + `Zdobywasz 1x ${capitalize(newItem)}.` };
             case ACTION.KOP:
                 return { respond: base + "TODO" };
             case ACTION.EKWIPUNEK:
-                return { respond: base + "TODO" };
+                return { secret: player.printEquipment() + freeAction };
             case ACTION.WEŹ:
                 return { respond: base + "TODO" };
             case ACTION.WYRZUĆ:
-                return { respond: base + "TODO" };
+                let amountToRemove = 1;
+                let itemToRemove = itemFromString(options.join(' '));
+                if (options[0] !== undefined && !isNaN(parseInt(options[0]))) {
+                    amountToRemove = parseInt(options[0]);
+                    itemToRemove = itemFromString(options.slice(1).join(' '));
+                }
+                if (itemToRemove && player.hasItem(itemToRemove, amountToRemove)) {
+                    if (!player.removeHeavyItems(itemToRemove, amountToRemove)) player.removeLightItems(itemToRemove, amountToRemove);
+                    return { secret: `Wyrzucasz ${amountToRemove}x ${capitalize(itemToRemove)}.` + freeAction };
+                } else {
+                    return { secret: `Nie posiadasz ${amountToRemove}x ${capitalize(itemToRemove)}.` + freeAction };
+                }
             case ACTION.DODAJ:
                 return { respond: base + "TODO" };
 
@@ -137,6 +165,11 @@ export class Game {
         this.board.get(x, y).updatePlayers(this.players);
     }
 
+    /**
+     * Returns an in-game player object for a discord user ID
+     * @param {Snowflake} id Discord user id
+     * @returns {Player | undefined} Player object or undefined if not found
+     */
     getPlayerById(id) {
         return this.players.find(p => p.discordId === id);
     }

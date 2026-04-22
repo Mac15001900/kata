@@ -1,6 +1,7 @@
 import { getRandomLetters } from './utils.js';
 import { BIOME_DATA } from '../data/biomes.js';
 import { BIOME, ACTION, DIRECTION } from './enums.js';
+import { capitalize, stringsEqual, printItem } from './utils.js';
 
 export class Tile {
     constructor(x, y, biome, buildings = []) {
@@ -100,13 +101,85 @@ export class Player {
 
         this.usedActions = 0;
         this.usedCapacity = 0;
-        this.equipment = [];
+        this.lightItems = [];
+        this.heavyItems = [];
     }
 
     makeNameShorthand(fullName) {
         let words = fullName.split(' ').filter(s => s.length > 2);
         if (words.length < 2 || words[0].length < 2 || words[1].length < 2) return "U-????";
         else return ("U-" + words[0][0] + words[0][1] + words[1][0] + words[1][1]).toUpperCase();
+    }
+
+    availableCapacity() {
+        return this.maxCapacity - this.usedCapacity;
+    }
+
+    addHeavyItem(item) {
+        if (this.availableCapacity() < 1) return false;
+        this.usedCapacity++;
+        this.heavyItems.push(item);
+        return true;
+    }
+
+    addLightItem(item) {
+        this.lightItems.push(item);
+    }
+
+    printEquipment() {
+        let res = `Ciężkie przedmioty (${this.usedCapacity}/${this.maxCapacity}):\n\n`
+        res += this.printifyList(this.heavyItems);
+        res += `\n\nLekkie przedmioty:\n\n`;
+        res += this.printifyList(this.lightItems);
+        return res;
+    }
+
+    printifyList(list) {
+        if (list.length === 0) return "—";
+        let itemList = list.map(printItem).sort();
+        let res = [];
+        let counter = 0;
+        for (let i = 0; i < itemList.length; i++) {
+            if (i + 1 < itemList.length && itemList[i] === itemList[i + 1]) {
+                counter++;
+            } else {
+                if (counter === 0) res.push(itemList[i]);
+                else res.push(`${counter + 1}x ${itemList[i]}`)
+                counter = 0;
+            }
+        }
+        return res.join('\n');
+    }
+
+    removeHeavyItems(type, amount = 1) {
+        while (amount > 0) {
+            let index = this.heavyItems.indexOf(type);
+            if (index > -1) {
+                this.heavyItems.splice(index, 1);
+                this.usedCapacity--;
+                amount--;
+            } else {
+                break;
+            }
+        }
+        return amount === 0;
+    }
+
+    removeLightItems(type, amount = 1) {
+        while (amount > 0) {
+            let index = this.lightItems.indexOf(type);
+            if (index > -1) {
+                this.lightItems.splice(index, 1);
+                amount--;
+            } else {
+                break;
+            }
+        }
+        return amount === 0;
+    }
+
+    hasItem(item, amount = 1) {
+        return (this.lightItems.concat(this.heavyItems)).filter(i => i === item).length >= amount;
     }
 }
 

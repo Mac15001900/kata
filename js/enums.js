@@ -1,4 +1,4 @@
-export const BIOME = {
+export const BIOME = Object.freeze({
     VOID: 0,
     RED: 1,
     ORANGE: 2,
@@ -7,9 +7,9 @@ export const BIOME = {
     CYAN: 5,
     BLUE: 6,
     VIOLET: 7,
-}
+});
 
-export const ACTION = {
+export const ACTION = Object.freeze({
     NONE: 0,
 
     UŻYJ: 1,
@@ -31,9 +31,9 @@ export const ACTION = {
 
     BUDUJ: 30,
     TWÓRZ: 31,
-}
+});
 
-export const DIRECTION = {
+export const DIRECTION = Object.freeze({
     DOWN_LEFT: 1,
     DOWN: 2,
     DOWN_RIGHT: 3,
@@ -43,4 +43,45 @@ export const DIRECTION = {
     UP_LEFT: 7,
     UP: 8,
     UP_RIGHT: 9
-}
+});
+
+export const ITEM = Object.freeze({
+    NONE: "",
+
+    //Harvest results:
+    DREWNO: "drewno",
+    MIÓD: "miód",
+    MARMUR: "marmur",
+    BIOMASA: "biomasa",
+    SZKŁO: "szkło",
+    RUDA_ŻELAZA: "ruda_żelaza",
+    GRZYB: "grzyb",
+
+    //Search results
+    LIŚĆ: "liść",
+    ŻYWICA: "żywica",
+    SADZONKA: "sadzonka",
+    WOSK: "wosk",
+    POMARAŃCZA: "pomarańcza",
+    SZKLANA_KULA: "szklana kula",
+    ZŁOTO: "złoto",
+    IMBIR: "imbir",
+    BIAŁY_KWIAT: "biały kwiat",
+    JABŁKO: "jabłko",
+    CZERWONY_KRYSZTAŁ: "czerwony kryształ",
+    POMARAŃCZOWY_KRYSZTAŁ: "pomarańczowy kryształ",
+    ŻÓŁTY_KRYSZTAŁ: "żółty kryształ",
+    ZIELONY_KRYSZTAŁ: "zielony kryształ",
+    CYJANOWY_KRYSZTAŁ: "cyjanowy kryształ",
+    NIEBIESKI_KRYSZTAŁ: "niebieski kryształ",
+    FIOLETOWY_KRYSZTAŁ: "fioletowy kryształ",
+    GRUDKA_KOBALTU: "grudka kobaltu",
+    JAGODY: "jagody",
+    CZARNY_KWIAT: "czarny kwiat",
+    ŚWIECĄCY_KAMIEŃ: "świecący kamień",
+
+    //Processed
+    ŻELAZO: "żelazo",
+    DESKA: "deska",
+
+});
