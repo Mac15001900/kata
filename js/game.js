@@ -94,15 +94,17 @@ export class Game {
             case ACTION.WYRZUĆ:
                 let amountToRemove = 1;
                 let itemToRemove = itemFromString(options.join(' '));
+                let userItemString = options[0];
                 if (options[0] !== undefined && !isNaN(parseInt(options[0]))) {
                     amountToRemove = parseInt(options[0]);
                     itemToRemove = itemFromString(options.slice(1).join(' '));
+                    userItemString = options[1];
                 }
                 if (itemToRemove && player.hasItem(itemToRemove, amountToRemove)) {
                     if (!player.removeHeavyItems(itemToRemove, amountToRemove)) player.removeLightItems(itemToRemove, amountToRemove);
                     return { secret: `Wyrzucasz ${amountToRemove}x ${capitalize(itemToRemove)}.` + freeAction };
                 } else {
-                    return { secret: `Nie posiadasz ${amountToRemove}x ${capitalize(itemToRemove)}.` + freeAction };
+                    return { secret: `Nie posiadasz ${amountToRemove}x ${capitalize(userItemString)}.` + freeAction };
                 }
             case ACTION.DODAJ:
                 return { respond: base + "TODO" };
