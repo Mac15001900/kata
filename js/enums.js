@@ -45,6 +45,12 @@ export const DIRECTION = Object.freeze({
     UP_RIGHT: 9
 });
 
+export const BUFF = Object.freeze({
+    NONE: 0,
+    RESTED: 1,
+    FED: 2,
+});
+
 export const ITEM = Object.freeze({
     NONE: "",
 
@@ -54,7 +60,7 @@ export const ITEM = Object.freeze({
     MARMUR: "marmur",
     BIOMASA: "biomasa",
     SZKŁO: "szkło",
-    RUDA_ŻELAZA: "ruda_żelaza",
+    RUDA_ŻELAZA: "ruda żelaza",
     GRZYB: "grzyb",
 
     //Search results

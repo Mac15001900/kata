@@ -7,7 +7,7 @@ export function getCommandFromString(string) {
     let s = {};
     s[ACTION.UŻYJ] = 'użyj wykorzystaj';
     s[ACTION.POMÓŻ] = 'pomóż pomoc pomagaj';
-    s[ACTION.PRACUJ] = 'pracuj';
+    s[ACTION.PRACUJ] = 'pracuj praca';
 
     s[ACTION.SZUKAJ] = 'szukaj rozejrzyj';
     s[ACTION.ZBIERAJ] = 'zbieraj zbierz';
@@ -32,7 +32,7 @@ export function getCommandFromString(string) {
 }
 
 export function getActionCost(action) {
-    if ([ACTION.EKWIPUNEK, ACTION.WYRZUĆ].includes(action)) return 0;
+    if ([ACTION.EKWIPUNEK, ACTION.WYRZUĆ, ACTION.DODAJ, ACTION.WEŹ].includes(action)) return 0;
     return 1;
 }
 

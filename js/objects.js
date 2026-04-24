@@ -1,7 +1,7 @@
 import { getRandomLetters } from './utils.js';
 import { BIOME_DATA } from '../data/biomes.js';
-import { BIOME, ACTION, DIRECTION } from './enums.js';
-import { capitalize, stringsEqual, printItem } from './utils.js';
+import { BIOME, ACTION, DIRECTION, BUFF } from './enums.js';
+import { capitalize, stringsEqual, printItem, printifyItemList } from './utils.js';
 
 export class Tile {
     constructor(x, y, biome, buildings = []) {
@@ -10,6 +10,8 @@ export class Tile {
         this.biome = biome;
         this.players = [];
         this.buildings = buildings;
+        this.construction = [];
+        this.items = new ItemContainer(0);
     }
 
     updatePlayers(players) {
@@ -33,7 +35,12 @@ export class Tile {
             if (this.players[0]) res[0] = this.players[0].name;
             if (this.players[1]) res[1] = this.players[1].name;
         }
-        // res[2] = `X:${this.x} | Y:${this.y}`;
+        // res[2] = `[🏗 🏗 🏗]`;
+        if (this.construction.length === 1) res[2] = `[${this.construction[0].getName()}]`;
+        else if (this.construction.length > 1) res[2] = `[Budowa]x${this.construction.length}`;
+
+        if (this.buildings.length === 1) res[2] = this.buildings[0].getName();
+        else if (this.buildings.length > 1) res[2] = `Osada (${this.buildings.length})`;
 
         res[3] = BIOME_DATA[this.biome].mapString;
         return res.join('\n');
@@ -44,8 +51,20 @@ export class Tile {
     }
 
     startConstruction(buildingData) {
-        console.log(`Started construction of a ${buildingData.name} at ${this.x},${this.y}`);
-        //TODO
+        // console.log(`Started construction of a ${buildingData.name} at ${this.x},${this.y}`);
+        this.construction.push(new ConstructionSite(buildingData));
+    }
+
+    updateConstruction() {
+        let finishedBuildings = this.construction.filter(c => c.isDone());
+        if (finishedBuildings.length === 0) return;
+
+        for (let i = 0; i < finishedBuildings.length; i++) {
+            let newBuilding = new Building(finishedBuildings[i].buildingData);
+            this.items.addCapacity(newBuilding.getStorageBonus());
+            this.buildings.push(newBuilding);
+        }
+        this.construction = this.construction.filter(c => !c.isDone());
     }
 }
 
@@ -64,6 +83,12 @@ export class Board {
         return !(x < 0 || x >= this.width || y < 0 || y >= this.height);
     }
 
+    /**
+     * Gets the tile object at specific coordinates
+     * @param {Number | Array} x X coordinate or a 2-element array with x and y coordinates
+     * @param {Number} [y] Y coordinate
+     * @returns {Tile | undefined}
+     */
     get(x, y) {
         if (typeof x === 'object') {
             y = x[1];
@@ -102,12 +127,13 @@ export class Player {
         this.discordId = discordId;
 
         this.maxActions = 1;
-        this.maxCapacity = 1;
+        this.maxCapacity = 2;
 
         this.usedActions = 0;
         this.usedCapacity = 0;
         this.lightItems = [];
         this.heavyItems = [];
+        this.states = [];
     }
 
     makeNameShorthand(fullName) {
@@ -133,27 +159,10 @@ export class Player {
 
     printEquipment() {
         let res = `Ciężkie przedmioty (${this.usedCapacity}/${this.maxCapacity}):\n\n`
-        res += this.printifyList(this.heavyItems);
+        res += printifyItemList(this.heavyItems);
         res += `\n\nLekkie przedmioty:\n\n`;
-        res += this.printifyList(this.lightItems);
+        res += printifyItemList(this.lightItems);
         return res;
-    }
-
-    printifyList(list) {
-        if (list.length === 0) return "—";
-        let itemList = list.map(printItem).sort();
-        let res = [];
-        let counter = 0;
-        for (let i = 0; i < itemList.length; i++) {
-            if (i + 1 < itemList.length && itemList[i] === itemList[i + 1]) {
-                counter++;
-            } else {
-                if (counter === 0) res.push(itemList[i]);
-                else res.push(`${counter + 1}x ${itemList[i]}`)
-                counter = 0;
-            }
-        }
-        return res.join('\n');
     }
 
     removeHeavyItems(type, amount = 1) {
@@ -183,11 +192,177 @@ export class Player {
         return amount === 0;
     }
 
+    removeItems(type, amount = 1) { //We assume no light and heavy item ever share a name
+        let heavyRemoved = this.removeHeavyItems(type, amount);
+        let lightRemoved = this.removeLightItems(type, amount);
+        return heavyRemoved || lightRemoved;
+    }
+
     hasItem(item, amount = 1) {
         return (this.lightItems.concat(this.heavyItems)).filter(i => i === item).length >= amount;
+    }
+
+    endCycle() {
+        this.usedActions = 0;
+        this.states = this.states.map(b => [b[0], b[1] - 1]).filter(b => b[1] > 0);
+        this.updateMaxActions();
+    }
+
+    hasState(state) {
+        return this.states.some(b => b[0] === state);
+    }
+
+    stateDuration(state) {
+        let stateEntry = this.states.find(b => b[0] === state);
+        return stateEntry ? stateEntry[1] : 0;
+    }
+
+    addState(type, duration) {
+        if (this.hasState(type)) this.states = this.states.map(b => b[0] === type ? [b[0], Math.max(b[1] + duration)] : b);
+        else this.states.push([type, duration]);
+        this.updateMaxActions();
+    }
+
+    updateMaxActions() {
+        let extraActions = [BUFF.RESTED, BUFF.FED].filter(b => this.hasState(b)).length;
+        this.maxActions = 1 + extraActions;
+    }
+
+    getActionStrength(action) {
+        return 1; //This will be expanded to add multipliers to some actions based on states/equipment
     }
 }
 
 export function makeRandomPlayers(amount, maxX, maxY) {
     return Array.from({ length: amount }, (_, i) => new Player(`U-${getRandomLetters(4)}`, Math.floor(Math.random() * maxX), Math.floor(Math.random() * maxY)));
+}
+
+export class ConstructionSite {
+    constructor(buildingData) {
+        this.buildingData = buildingData;
+        this.materialsPlaced = [];
+        this.materialsRemaining = [...buildingData.cost];
+        this.workDone = 0;
+        this.requiredWork = buildingData.cost.length;
+    }
+
+    needsItem(item) {
+        return this.materialsRemaining.includes(item);
+    }
+
+    placeItem(item) {
+        if (!this.needsItem(item)) return false;
+        this.materialsPlaced.push(item);
+        this.materialsRemaining.splice(this.materialsRemaining.indexOf(item), 1);
+        return true;
+    }
+
+    hasAllMaterials() {
+        return this.materialsRemaining.length === 0;
+    }
+
+    addWork(amount = 1) {
+        if (!this.hasAllMaterials()) return false;
+        this.workDone += amount;
+        return this.isDone();
+    }
+
+    workRemanining() {
+        return this.requiredWork - this.workDone;
+    }
+
+    isDone() {
+        return this.workDone >= this.requiredWork;
+    }
+
+    getName() {
+        return this.buildingData.name;
+    }
+}
+
+export class Building {
+    constructor(buildingData) {
+        this.data = buildingData;
+    }
+
+    applyBuffs(players) {
+        let buffs = this.data.buffsOnRest;
+        if (!buffs || buffs.length === 0) return;
+        for (let buff of buffs) {
+            let type = buff[0], duration = buff[1], targets = buff[2];
+            if (players.length <= targets) players.foreach(p => addBuff(type, duration));
+            else {
+                players.toSorted((a, b) => a.stateDuration(type) - b.stateDuration(type)).slice(0, targets).foreach(p => addBuff(type, duration));
+            }
+        }
+    }
+
+    getStorageBonus() {
+        return this.data.storageCapacity || 0;
+    }
+
+    getName() {
+        return this.data.name;
+    }
+}
+
+/**
+ * Stores a limited amount of heavy items and unlimited light items
+ */
+export class ItemContainer {
+    constructor(maxSize) {
+        this.maxSize = maxSize;
+        this.heavyItems = [];
+        this.lightItems = [];
+    }
+
+    addHeavyItem(item) {
+        if (this.heavyItems.length >= this.maxSize) return false;
+        this.heavyItems.push(item);
+        return true;
+    }
+
+    addLightItem(item) {
+        this.lightItems.push(item);
+        return true;
+    }
+
+    removeItem(item) {
+        let index = this.heavyItems.indexOf(item);
+        if (index > -1) {
+            this.heavyItems.splice(index, 1);
+            return true;
+        }
+        index = this.lightItems.indexOf(item);
+        if (index > -1) {
+            this.lightItems.splice(index, 1);
+            return true;
+        }
+        return false;
+    }
+
+    hasItem(item) {
+        return this.heavyItems.includes(item) || this.lightItems.includes(item);
+    }
+
+    getItemAmount(item) {
+        return (this.heavyItems.concat(this.lightItems)).filter(i => i === item).length;
+    }
+
+    getRemainingCapacity() {
+        return this.maxSize - this.heavyItems.length;
+    }
+
+    getMaxCapacity() {
+        return this.maxSize;
+    }
+
+    changeCapacity(newCapacity) {
+        this.maxSize = newCapacity;
+        if (this.heavyItems.length > newCapacity) this.heavyItems = this.heavyItems.slice(0, newCapacity);
+    }
+
+    addCapacity(amount) {
+        this.maxSize += amount;
+    }
 }

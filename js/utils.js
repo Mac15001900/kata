@@ -43,7 +43,7 @@ export async function InstallGlobalCommands(appId, commands) {
 
 // Simple method that returns a random emoji from list
 export function getRandomEmoji() {
-    const emojiList = ['😭', '😄', '😌', '🤓', '😎', '😤', '🤖', '😶‍🌫️', '🌏', '📸', '💿', '👋', '🌊', '✨'];
+    const emojiList = ['😄', '😌', '🤓', '😎', '😤', '🤖', '😶‍🌫️', '🌏', '📸', '💿', '👋', '🌊', '✨'];
     return emojiList[Math.floor(Math.random() * emojiList.length)];
 }
 
@@ -88,12 +88,28 @@ export function stringsEqual(a, b) {
 }
 
 export function itemFromString(string) {
-    let searchString = string.replace(/ /, '_');
     return ITEM[Object.keys(ITEM).find(key => stringsEqual(ITEM[key], string))];
 }
 
 export function printItem(item) {
     return capitalize(item).replace(/_/g, ' ');
+}
+
+export function printifyItemList(list) {
+    if (list.length === 0) return "—";
+    let itemList = list.map(printItem).sort();
+    let res = [];
+    let counter = 0;
+    for (let i = 0; i < itemList.length; i++) {
+        if (i + 1 < itemList.length && itemList[i] === itemList[i + 1]) {
+            counter++;
+        } else {
+            if (counter === 0) res.push(itemList[i]);
+            else res.push(`${counter + 1}x ${itemList[i]}`)
+            counter = 0;
+        }
+    }
+    return res.join('\n');
 }
 
 /**
@@ -133,3 +149,5 @@ export function arraysEqual(ar, br) {
     }
     return true;
 }
+
+global.test = itemFromString;

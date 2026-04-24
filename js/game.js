@@ -1,7 +1,7 @@
 import { BUILDING_DATA } from "../data/building.js";
 import { Tile, Board, Player } from "./objects.js"
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
-import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, parseItemList, arraysEqual } from "./utils.js";
+import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, parseItemList, arraysEqual, printifyItemList } from "./utils.js";
 import fs from 'fs';
 import { BIOME, ACTION, DIRECTION } from './enums.js';
 import { BIOME_DATA } from "../data/biomes.js";
@@ -68,9 +68,21 @@ export class Game {
             case ACTION.POMÓŻ:
                 return { respond: base + "TODO" };
             case ACTION.PRACUJ:
-                return { respond: base + "TODO" };
+                player.remainingActions += cost;// To make life simpler, we refund the cost here, and re-apply it if the action is successful
+                if (!options[0]) return { secret: "Wybierz cel." };
+                let possibleWorkTargets = currentTile.construction.filter(c => stringsEqual(c.getName(), options[0]));
+                if (possibleWorkTargets.length === 0) return { secret: "Nie ma tutaj takiego celu." };
 
+                let workTarget = possibleWorkTargets.filter(t => t.hasAllMaterials())[0];
+                if (!workTarget) return { secret: `${possibleWorkTargets.length > 1 ? "Żaden cel" : "Ten cel"} nie potrzebuje jeszcze pracy.` };
 
+                player.remainingActions -= cost; //Action successful
+                workTarget.addWork(player.getActionStrength(ACTION.PRACUJ));
+                if (workTarget.isDone()) {
+                    currentTile.updateConstruction();
+                    return { respond: base + `Budowa zakończona sukcesem.` };
+                }
+                else return { respond: base + `Praca: ${workTarget.workDone}/${workTarget.requiredWork}` };
             case ACTION.SZUKAJ:
                 const lightLootPool = BIOME_DATA[currentBiome].searchLoot;
                 //TODO - check for appropriate tools to potentially apply bonuses
@@ -108,7 +120,27 @@ export class Game {
                     return { secret: `Nie posiadasz ${amountToRemove}x ${capitalize(userItemString)}.` + freeAction };
                 }
             case ACTION.DODAJ:
-                return { respond: base + "TODO" };
+                if (!options[0]) return { secret: "Wybierz cel." };
+                let possibleTargets = currentTile.construction.filter(c => stringsEqual(c.getName(), options[0]));
+                if (possibleTargets.length === 0) return { secret: "Nie ma tutaj takiego celu." };
+
+                // let target = possibleTargets[0];
+
+                if (!options[1]) return { secret: "Wybierz przedmiot." };
+                let itemToAdd = itemFromString(options.slice(1).join(' '));
+                if (!itemToAdd || !player.hasItem(itemToAdd)) return { secret: "Nie posiadasz " + options.slice(1).join(' ') };
+
+                let target = possibleTargets.filter(t => t.needsItem(itemToAdd))[0];
+                if (!target) return { secret: `${possibleTargets.length > 1 ? "Żaden cel" : "Ten cel"} nie potrzebuje tego przedmiotu.` };
+
+                target.placeItem(itemToAdd);
+                player.removeItems(itemToAdd);
+
+                if (target.hasAllMaterials()) {
+                    return { respond: base + `To ostatni materiał którego wymaga ${target.getName()}.\nPraca: 0/${target.requiredWork}` + freeAction };
+                } else {
+                    return { respond: base + `Pozostałe potrzebne materiały:\n${printifyItemList(target.materialsRemaining)}\nPraca: 0/${target.requiredWork}` + freeAction };
+                }
 
 
             case ACTION.IDŹ:

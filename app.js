@@ -220,6 +220,11 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                         return secretRespond("Added " + valid.length + " users");
                     }
                 //Random tests
+                case 'teleport':
+                    let teleportingPlayer = game.getPlayerById(member.user.id);
+                    teleportingPlayer.x = parseInt(options[0]);
+                    teleportingPlayer.y = parseInt(options[1]);
+                    return secretRespond(`Teleporting ${teleportingPlayer.name} to ${teleportingPlayer.x}, ${teleportingPlayer.y}`);
                 case 'printUsers':
                     // const guild = erisBot.guilds.get(guild_id);
                     // console.assert(guild !== undefined, "Guild not found");
