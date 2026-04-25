@@ -17,7 +17,7 @@ export function getCommandFromString(string) {
     s[ACTION.WYRZUĆ] = 'wyrzuć porzuć odrzuć pozbądź';
     s[ACTION.DODAJ] = 'dodaj dorzuć połóż dołóż';
     s[ACTION.ZJEDZ] = 'zjedz jedz spożyj';
-    s[ACTION.ZOSTAW] = 'zostaw odłóż zmagazynuj magazynuj przechowaj';
+    s[ACTION.ZOSTAW] = 'zostaw odłóż zmagazynuj magazynuj przechowaj włóż';
     s[ACTION.DAJ] = 'daj podaj przekaż';
 
     s[ACTION.IDŹ] = 'idź idx chodź';

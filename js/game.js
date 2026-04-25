@@ -106,7 +106,11 @@ export class Game {
                 if (!options[0]) return { secret: "Wybierz przedmiot." };
                 let itemToTake = itemFromString(options.join(' '));
                 if (!itemToTake || !currentTile.items.hasItem(itemToTake)) return { secret: "Nie ma tutaj " + options.join(' ') };
-                return { respond: base + "TODO" };
+                if (!player.items.canFit(itemToTake)) return { secret: "Nie masz na to miejsca w ekwipunku." };
+
+                currentTile.items.removeItem(itemToTake);
+                player.addItem(itemToTake);
+                return { secret: `Zabierasz ${options.join(' ')}.` + freeAction };
             case ACTION.WYRZUĆ:
                 let amountToRemove = 1;
                 let itemToRemove = itemFromString(options.join(' '));
@@ -150,13 +154,13 @@ export class Game {
                 if (!options[0]) return { secret: "Wybierz przedmiot." };
                 let itemToLeave = itemFromString(options.join(' '));
                 if (!itemToLeave || !player.hasItem(itemToLeave)) return { secret: "Nie posiadasz " + options.join(' ') };
-                if (currentTile.items.canFit(itemToLeave)) return { secret: "Nie ma tu miejsca na ten przedmiot." };
+                if (!currentTile.items.canFit(itemToLeave)) return { secret: "Nie ma tu miejsca na ten przedmiot." };
 
                 //At this point, the item exists in player's inventory and there's space for it in tile's inventory. We can do this.
                 player.removeItems(itemToLeave);
                 currentTile.items.addItem(itemToLeave);
 
-                return { respond: secret + `Odkładasz ${options.join(' ')}.` + freeAction };
+                return { secret: `Odkładasz ${options.join(' ')}.` + freeAction };
             case ACTION.DAJ:
                 return { respond: base + "TODO" };
 
@@ -255,6 +259,14 @@ export class Game {
             selected -= options[k];
         }
         console.error("Logical error in pickWeighted");
+    }
+
+    /**
+     * 
+     * @returns {[Player]}
+     */
+    getAllPlayers() {
+        return this.players;
     }
 
 }

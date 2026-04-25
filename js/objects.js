@@ -95,6 +95,7 @@ export class Board {
             y = x[1];
             x = x[0];
         }
+        console.assert(x !== undefined && y !== undefined, "Trying to get a tile with undefined coordinates");
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) return undefined;
         return this.tiles[y][x];
     }
@@ -135,7 +136,7 @@ export class Player {
     }
 
     makeNameShorthand(fullName) {
-        let words = fullName.split(' ').filter(s => s.length > 2);
+        let words = fullName.split(' ').filter(s => s.length >= 2);
         if (words.length < 2 || words[0].length < 2 || words[1].length < 2) return "U-????";
         else return ("U-" + words[0][0] + words[0][1] + words[1][0] + words[1][1]).toUpperCase();
     }
@@ -225,7 +226,7 @@ export class ConstructionSite {
         return this.isDone();
     }
 
-    workRemanining() {
+    workRemaining() {
         return this.requiredWork - this.workDone;
     }
 
@@ -235,6 +236,12 @@ export class ConstructionSite {
 
     getName() {
         return this.buildingData.name;
+    }
+
+    magicallyFinish() {
+        this.workDone = this.requiredWork;
+        this.materialsPlaced = [...this.buildingData.cost];
+        this.materialsRemaining = [];
     }
 }
 
@@ -316,7 +323,8 @@ export class ItemContainer {
     }
 
     getItemAmount(item) {
-        return (this.heavyItems.concat(this.lightItems)).filter(i => i === item).length;
+        if (item) return (this.heavyItems.concat(this.lightItems)).filter(i => i === item).length;
+        else return this.heavyItems.length + this.lightItems.length;
     }
 
     getRemainingCapacity() {
@@ -347,5 +355,10 @@ export class ItemContainer {
         res += `\n\nLekkie przedmioty:\n\n`;
         res += printifyItemList(this.lightItems);
         return res;
+    }
+
+    clearAllItems() {
+        this.heavyItems = [];
+        this.lightItems = [];
     }
 }
