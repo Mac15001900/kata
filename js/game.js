@@ -87,7 +87,7 @@ export class Game {
                 const lightLootPool = BIOME_DATA[currentBiome].searchLoot;
                 //TODO - check for appropriate tools to potentially apply bonuses
                 let newItem2 = lightLootPool[Math.floor(Math.random() * lightLootPool.length)];
-                player.addLightItem(newItem2);
+                player.addItem(newItem2);
                 return { respond: base + "Znajdujesz 1x " + capitalize(newItem2) };
             case ACTION.ZBIERAJ:
                 if (player.availableCapacity() <= 0) {
@@ -96,13 +96,16 @@ export class Game {
                 const heavyLootPool = BIOME_DATA[currentBiome].harvestLoot;
                 //TODO - check for appropriate tools to potentially apply bonuses
                 let newItem = heavyLootPool[Math.floor(Math.random() * heavyLootPool.length)];
-                player.addHeavyItem(newItem);
+                player.addItem(newItem);
                 return { respond: base + `Zdobywasz 1x ${capitalize(newItem)}.` };
             case ACTION.KOP:
                 return { respond: base + "TODO" };
             case ACTION.EKWIPUNEK:
                 return { secret: player.printEquipment() + freeAction };
             case ACTION.WEŹ:
+                if (!options[0]) return { secret: "Wybierz przedmiot." };
+                let itemToTake = itemFromString(options.join(' '));
+                if (!itemToTake || !currentTile.items.hasItem(itemToTake)) return { secret: "Nie ma tutaj " + options.join(' ') };
                 return { respond: base + "TODO" };
             case ACTION.WYRZUĆ:
                 let amountToRemove = 1;
@@ -114,7 +117,7 @@ export class Game {
                     userItemString = options[1];
                 }
                 if (itemToRemove && player.hasItem(itemToRemove, amountToRemove)) {
-                    if (!player.removeHeavyItems(itemToRemove, amountToRemove)) player.removeLightItems(itemToRemove, amountToRemove);
+                    player.removeItems(itemToRemove, amountToRemove);
                     return { secret: `Wyrzucasz ${amountToRemove}x ${capitalize(itemToRemove)}.` + freeAction };
                 } else {
                     return { secret: `Nie posiadasz ${amountToRemove}x ${capitalize(userItemString)}.` + freeAction };
@@ -141,6 +144,21 @@ export class Game {
                 } else {
                     return { respond: base + `Pozostałe potrzebne materiały:\n${printifyItemList(target.materialsRemaining)}\nPraca: 0/${target.requiredWork}` + freeAction };
                 }
+            case ACTION.ZJEDZ:
+                return { respond: base + "TODO" };
+            case ACTION.ZOSTAW:
+                if (!options[0]) return { secret: "Wybierz przedmiot." };
+                let itemToLeave = itemFromString(options.join(' '));
+                if (!itemToLeave || !player.hasItem(itemToLeave)) return { secret: "Nie posiadasz " + options.join(' ') };
+                if (currentTile.items.canFit(itemToLeave)) return { secret: "Nie ma tu miejsca na ten przedmiot." };
+
+                //At this point, the item exists in player's inventory and there's space for it in tile's inventory. We can do this.
+                player.removeItems(itemToLeave);
+                currentTile.items.addItem(itemToLeave);
+
+                return { respond: secret + `Odkładasz ${options.join(' ')}.` + freeAction };
+            case ACTION.DAJ:
+                return { respond: base + "TODO" };
 
 
             case ACTION.IDŹ:

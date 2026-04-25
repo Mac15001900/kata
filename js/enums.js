@@ -24,6 +24,8 @@ export const ACTION = Object.freeze({
     WYRZUĆ: 15,
     DODAJ: 16,
     ZJEDZ: 17,
+    ZOSTAW: 18,
+    DAJ: 19,
 
     IDŹ: 20,
     PRZYZWIJ: 21,

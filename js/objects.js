@@ -2,6 +2,7 @@ import { getRandomLetters } from './utils.js';
 import { BIOME_DATA } from '../data/biomes.js';
 import { BIOME, ACTION, DIRECTION, BUFF } from './enums.js';
 import { capitalize, stringsEqual, printItem, printifyItemList } from './utils.js';
+import { isHeavyItem } from '../data/items.js';
 
 export class Tile {
     constructor(x, y, biome, buildings = []) {
@@ -127,12 +128,9 @@ export class Player {
         this.discordId = discordId;
 
         this.maxActions = 1;
-        this.maxCapacity = 2;
-
         this.usedActions = 0;
-        this.usedCapacity = 0;
-        this.lightItems = [];
-        this.heavyItems = [];
+
+        this.items = new ItemContainer(2);
         this.states = [];
     }
 
@@ -143,63 +141,23 @@ export class Player {
     }
 
     availableCapacity() {
-        return this.maxCapacity - this.usedCapacity;
+        return this.items.getRemainingCapacity();
     }
 
-    addHeavyItem(item) {
-        if (this.availableCapacity() < 1) return false;
-        this.usedCapacity++;
-        this.heavyItems.push(item);
-        return true;
-    }
-
-    addLightItem(item) {
-        this.lightItems.push(item);
+    addItem(item) {
+        return this.items.addItem(item);
     }
 
     printEquipment() {
-        let res = `Ciężkie przedmioty (${this.usedCapacity}/${this.maxCapacity}):\n\n`
-        res += printifyItemList(this.heavyItems);
-        res += `\n\nLekkie przedmioty:\n\n`;
-        res += printifyItemList(this.lightItems);
-        return res;
+        return this.items.printItems();
     }
 
-    removeHeavyItems(type, amount = 1) {
-        while (amount > 0) {
-            let index = this.heavyItems.indexOf(type);
-            if (index > -1) {
-                this.heavyItems.splice(index, 1);
-                this.usedCapacity--;
-                amount--;
-            } else {
-                break;
-            }
-        }
-        return amount === 0;
-    }
-
-    removeLightItems(type, amount = 1) {
-        while (amount > 0) {
-            let index = this.lightItems.indexOf(type);
-            if (index > -1) {
-                this.lightItems.splice(index, 1);
-                amount--;
-            } else {
-                break;
-            }
-        }
-        return amount === 0;
-    }
-
-    removeItems(type, amount = 1) { //We assume no light and heavy item ever share a name
-        let heavyRemoved = this.removeHeavyItems(type, amount);
-        let lightRemoved = this.removeLightItems(type, amount);
-        return heavyRemoved || lightRemoved;
+    removeItems(type, amount = 1) {
+        return this.items.removeItems(type, amount);
     }
 
     hasItem(item, amount = 1) {
-        return (this.lightItems.concat(this.heavyItems)).filter(i => i === item).length >= amount;
+        return this.items.getItemAmount(item) >= amount;
     }
 
     endCycle() {
@@ -327,6 +285,11 @@ export class ItemContainer {
         return true;
     }
 
+    addItem(item) {
+        if (isHeavyItem(item)) return this.addHeavyItem(item);
+        else return this.addLightItem(item);
+    }
+
     removeItem(item) {
         let index = this.heavyItems.indexOf(item);
         if (index > -1) {
@@ -341,6 +304,13 @@ export class ItemContainer {
         return false;
     }
 
+    removeItems(item, amount = 1) {
+        if (!this.getItemAmount(item) >= amount) return false;
+        for (let i = 0; i < amount; i++) {
+            this.removeItem(item);
+        }
+    }
+
     hasItem(item) {
         return this.heavyItems.includes(item) || this.lightItems.includes(item);
     }
@@ -351,6 +321,11 @@ export class ItemContainer {
 
     getRemainingCapacity() {
         return this.maxSize - this.heavyItems.length;
+    }
+
+    canFit(item) {
+        if (this.maxSize === 0) return false; //If there is no storage at all, we can't even store light items
+        return isHeavyItem(item) ? this.getRemainingCapacity() > 0 : true;
     }
 
     getMaxCapacity() {
@@ -364,5 +339,13 @@ export class ItemContainer {
 
     addCapacity(amount) {
         this.maxSize += amount;
+    }
+
+    printItems() {
+        let res = `Ciężkie przedmioty (${this.heavyItems.length}/${this.maxSize}):\n\n`
+        res += printifyItemList(this.heavyItems);
+        res += `\n\nLekkie przedmioty:\n\n`;
+        res += printifyItemList(this.lightItems);
+        return res;
     }
 }

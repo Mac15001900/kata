@@ -13,10 +13,12 @@ export function getCommandFromString(string) {
     s[ACTION.ZBIERAJ] = 'zbieraj zbierz';
     s[ACTION.KOP] = 'kop wykop';
     s[ACTION.EKWIPUNEK] = 'ekwipunek eq e przedmioty';
-    s[ACTION.WEŹ] = 'weź podnieś';
+    s[ACTION.WEŹ] = 'weź podnieś zabierz';
     s[ACTION.WYRZUĆ] = 'wyrzuć porzuć odrzuć pozbądź';
-    s[ACTION.DODAJ] = 'dodaj dorzuć wrzuć połóż';
+    s[ACTION.DODAJ] = 'dodaj dorzuć połóż dołóż';
     s[ACTION.ZJEDZ] = 'zjedz jedz spożyj';
+    s[ACTION.ZOSTAW] = 'zostaw odłóż zmagazynuj magazynuj przechowaj';
+    s[ACTION.DAJ] = 'daj podaj przekaż';
 
     s[ACTION.IDŹ] = 'idź idx chodź';
     s[ACTION.PRZYZWIJ] = 'przyzwij przyzywaj przywołaj sprowadź';
@@ -32,7 +34,7 @@ export function getCommandFromString(string) {
 }
 
 export function getActionCost(action) {
-    if ([ACTION.EKWIPUNEK, ACTION.WYRZUĆ, ACTION.DODAJ, ACTION.WEŹ].includes(action)) return 0;
+    if ([ACTION.EKWIPUNEK, ACTION.WYRZUĆ, ACTION.DODAJ, ACTION.WEŹ, ACTION.ZOSTAW].includes(action)) return 0;
     return 1;
 }
 
