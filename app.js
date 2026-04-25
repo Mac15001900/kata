@@ -16,6 +16,8 @@ import { renderTableImage } from './js/drawTableImage.js';
 import { Tile, Player, makeRandomPlayers } from './js/objects.js';
 import { Game } from './js/game.js';
 import { BIOME, ACTION, DIRECTION } from './js/enums.js';
+import { BUILDING_DATA } from './data/building.js';
+import { bigGameTest } from './js/tests.js';
 
 // Create an express app
 const app = express();
@@ -225,11 +227,22 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                     teleportingPlayer.x = parseInt(options[0]);
                     teleportingPlayer.y = parseInt(options[1]);
                     return secretRespond(`Teleporting ${teleportingPlayer.name} to ${teleportingPlayer.x}, ${teleportingPlayer.y}`);
+                case 'spawnHouse':
+                    let spawnTile = game.board.get(game.getPlayerById(member.user.id).x, game.getPlayerById(member.user.id).y);
+                    if (options[0] && options[1]) spawnTile = game.board.get(parseInt(options[0]), parseInt(options[1]));
+                    spawnTile.startConstruction(BUILDING_DATA.find(b => b.name === 'Dom'));
+                    spawnTile.construction[0].magicallyFinish();
+                    spawnTile.updateConstruction();
+                    return secretRespond(`Spawned a house at ${options[0]}, ${options[1]}`);
                 case 'printUsers':
                     // const guild = erisBot.guilds.get(guild_id);
                     // console.assert(guild !== undefined, "Guild not found");
                     let members2 = getServerMembers(guild_id);
                     return respond(Array.from(members2.values(), m => m.nick || m.user.username || "????").join("\n"));
+                case 'tests':
+                case 'test':
+                    if (bigGameTest()) return secretRespond(":white_check_mark: All tests ran. All tests successful.");
+                    else return secretRespond(":x: All tests ran. Some tests failed. Details in console.");
                 case 'table':
                     await (async () => {
                         /*const data = Array.from({ length: 26 }, (_, r) =>
