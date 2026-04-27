@@ -1,5 +1,7 @@
 import 'dotenv/config';
-import { BIOME, ACTION, DIRECTION, ITEM } from './enums.js';
+import { BIOME, ACTION, DIRECTION, ITEM, BUILDING } from './enums.js';
+import { BUILDING_DATA } from '../data/building.js';
+import { RECIPES } from '../data/crafting.js';
 
 let lastAllUsersRequests = {};
 let cachedMembers = {};
@@ -150,4 +152,41 @@ export function arraysEqual(ar, br) {
     return true;
 }
 
-global.test = itemFromString;
+export function parseBuilding(string) {
+    return BUILDING_DATA.find(b => stringsEqual(b.name, string));
+}
+
+/**
+ * Parses a string that contains a building name followed by a list of items
+ * @param {String} string User's input
+ * @returns An object with .building and .items fields if parsing succeeds, or undefined if parsing fails
+ */
+export function parseBuildingAndItems(string) {
+    let building = null;
+    let i = 1;
+    let words = string.replace(/[,;|]/g, ' ').split(' ');
+    let number = 0;
+    while (!building) {
+        if (i > words.length) return undefined;
+        building = parseBuilding(words.slice(0, i).join(' '));
+        i++;
+    }
+    if (!isNaN(parseInt(words[i - 1]))) {
+        number = parseInt(words[i - 1]);
+        i++;
+    }
+    let itemList = parseItemList(words.slice(i - 1).join(' '));
+    if (!itemList) return undefined;
+
+    return { building, number, items: itemList };
+}
+
+export function getBuildingData(buildingType) {
+    return BUILDING_DATA.find(b => b.id === buildingType);
+}
+
+export function getCraftingRecipe(ingredients, building) {
+    return RECIPES.find(r => r.input === ingredients && r.building === building);
+}
+
+global.test = parseBuildingAndItems

@@ -51,6 +51,15 @@ export class Tile {
         return this.buildings.includes(type);
     }
 
+    hasMultipleBuildings(type) {
+        return this.buildings.filter(b => b === type).length > 1;
+    }
+
+    getBuilding(type, number) {
+        if (!number) return this.buildings.find(b => b === type);
+        else return this.buildings.filter(b => b === type)[number - 1];
+    }
+
     startConstruction(buildingData) {
         // console.log(`Started construction of a ${buildingData.name} at ${this.x},${this.y}`);
         this.construction.push(new ConstructionSite(buildingData));
@@ -248,6 +257,7 @@ export class ConstructionSite {
 export class Building {
     constructor(buildingData) {
         this.data = buildingData;
+        this.fuel = 0;
     }
 
     applyBuffs(players) {
@@ -268,6 +278,14 @@ export class Building {
 
     getName() {
         return this.data.name;
+    }
+
+    needsFuel() {
+        return this.data.fuelPerOperation > 0;
+    }
+
+    hasEnoughFuel() {
+        return !this.data.fuelPerOperation || this.fuel >= this.data.fuelPerOperation
     }
 }
 

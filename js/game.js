@@ -1,7 +1,7 @@
 import { BUILDING_DATA } from "../data/building.js";
 import { Tile, Board, Player } from "./objects.js"
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
-import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, parseItemList, arraysEqual, printifyItemList } from "./utils.js";
+import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, parseItemList, arraysEqual, printifyItemList, parseBuildingAndItems, getCraftingRecipe } from "./utils.js";
 import fs from 'fs';
 import { BIOME, ACTION, DIRECTION } from './enums.js';
 import { BIOME_DATA } from "../data/biomes.js";
@@ -64,6 +64,44 @@ export class Game {
                 return { respond: base + "Niestety okazuje się, że ta akcji nic nie robi." };
 
             case ACTION.UŻYJ:
+                if (!options[0]) {
+                    player.remainingActions += cost;
+                    return { secret: "Wybierz czego chcesz użyć." };
+                }
+                let itemsToUse = parseItemList(options.join(' '));
+                if (itemsToUse) { //Using an item
+                    return { respond: "TODO" };
+                } else { //Using a building
+                    let parsed = parseBuildingAndItems(options.join(' '));
+                    if (!parsed) return { respond: base + "Niestety, próba użycia budynków lub przedmiotów, które nie istnieją, nie powodzi się." };
+                    let { building: buildingData, items, number } = parsed;
+
+                    if (!currentTile.hasBuilding(buildingData.id)) {
+                        player.remainingActions += cost;
+                        return { secret: `${buildingData.name} nie istnieje w tym sektorze.` };
+                    }
+
+                    //Crafting buildings
+                    if (buildingData.canCraft) {
+                        if (items.length === 0) {
+                            player.remainingActions += cost;
+                            return { secret: options.join(' ') + " wymaga przedmiotów do użycia." };
+                        }
+
+                        let recipe = getCraftingRecipe(items, buildingData);
+                        if (!recipe) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić." };
+
+                        // if (!buildingData.hasEnou)
+
+                    }
+
+
+
+
+
+
+                }
+
                 return { respond: base + "TODO" };
             case ACTION.POMÓŻ:
                 return { respond: base + "TODO" };
@@ -267,6 +305,14 @@ export class Game {
      */
     getAllPlayers() {
         return this.players;
+    }
+
+    handleProblemsWithBuildingSelection(tile, buildingId, number) {
+        if (!buildingId || !tile.hasBuilding(buildingId)) return { error: "Nie ma tutaj takiego budynku." };
+        if (tile.hasMultipleBuildings(buildingId) && !number) return { error: "Jest tu wiele budynków tego rodzaju. Sprecyzuj numer." };
+        let res = tile.getBuilding(buildingId, number);
+        if (!res) return { error: `Nie ma tutaj takiego budynku o numerze ${number}.` };
+        return { building: res }
     }
 
 }

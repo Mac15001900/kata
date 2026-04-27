@@ -93,3 +93,11 @@ export const ITEM = Object.freeze({
     DESKA: "deska",
 
 });
+
+export const BUILDING = Object.freeze({
+    NONE: 0,
+    DOM: 1,
+    MAGAZYN: 2,
+    PIEC: 3,
+    TEST: 42,
+});
