@@ -6,6 +6,7 @@ let testsPassed = 0;
 let testsRan = 0;
 let game = null;
 let actionLog = [];
+let actionResult = null;
 const TEST_PLAYER_ID = "1";
 
 
@@ -26,10 +27,17 @@ function testPlayerPosition(player, x, y) {
 }
 
 function action(string, repeat = 1) {
+    let res;
     for (let i = 0; i < repeat; i++) {
-        let res = game.processAction(string, TEST_PLAYER_ID)
+        res = game.processAction(string, TEST_PLAYER_ID)
         actionLog.push({ input: string, pr: res.respond, sr: res.secret }); //pr: public response, sr: secret (emphemeral) response            
     }
+    actionResult = res;
+    return res;
+}
+
+function assertSecretResponse() {
+    test(actionResult && actionResult.secret && !actionResult.respond, "Didn't get a secret response when expected. Got a public response: " + actionResult.respond);
 }
 
 export function bigGameTest() {
@@ -57,6 +65,9 @@ export function bigGameTest() {
     action("idź lewo");
     testPlayerPosition(player, 0, 0);
     action("idź lewo"); //This would go off the board - no movement should happen
+    testPlayerPosition(player, 0, 0);
+    action("idź dkfjghdf"); //Testing an invalid direction
+    assertSecretResponse();
     testPlayerPosition(player, 0, 0);
 
     //Light-item collection
@@ -264,3 +275,5 @@ export function bigGameTest() {
     return testsRan === testsPassed;
 
 }
+
+global.bigGameTest = bigGameTest;

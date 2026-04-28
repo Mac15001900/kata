@@ -340,6 +340,16 @@ export class ItemContainer {
         return this.heavyItems.includes(item) || this.lightItems.includes(item);
     }
 
+    hasAllItems(items) {
+        let remaining = [...this.heavyItems.concat(this.lightItems)];
+        for (let item in items) {
+            let index = remaining.indexOf(item);
+            if (index > -1) remaining.splice(index, 1);
+            else return false;
+        }
+        return true;
+    }
+
     getItemAmount(item) {
         if (item) return (this.heavyItems.concat(this.lightItems)).filter(i => i === item).length;
         else return this.heavyItems.length + this.lightItems.length;

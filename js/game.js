@@ -1,10 +1,11 @@
 import { BUILDING_DATA } from "../data/building.js";
 import { Tile, Board, Player } from "./objects.js"
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
-import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, parseItemList, arraysEqual, printifyItemList, parseBuildingAndItems, getCraftingRecipe } from "./utils.js";
+import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, parseItemList as parseItemListOld, arraysEqual, printifyItemList, parseBuildingAndItems, getCraftingRecipe } from "./utils.js";
 import fs from 'fs';
 import { BIOME, ACTION, DIRECTION } from './enums.js';
 import { BIOME_DATA } from "../data/biomes.js";
+import { ParseHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem } from "./parsers.js";
 
 export class Game {
     constructor(opts) {
@@ -29,12 +30,34 @@ export class Game {
     }
 
     /**
-     * Processes an action from a user
+     * Processes an action from a user. Mostly serves as a wrapper around processInternalAction
      * @param {String} inputString The full string the user typed for the /akcja command
      * @param {Snowflake} userId Discord user ID
      * @returns {Object} Responses to the user for the action. Usually involving either the 'response' or 'secret' fields, but sometimes both.
      */
     processAction(inputString, userId) {
+        let player = this.getPlayerById(userId);
+        let playerActions = player.usedActions;
+        let res = null;
+        try {
+            res = this.processInternalAction(inputString, userId);
+        } catch (e) {
+            if (e instanceof ActionException) {
+                player.usedActions = playerActions; //Reset any used up actions
+                return { secret: e.message };
+            } else throw e
+        }
+        return res;
+    }
+
+    /**
+     * Processes an action from a user. Can throw ParsingException if parsing user's input fails.
+     * @param {String} inputString The full string the user typed for the /akcja command
+     * @param {Snowflake} userId Discord user ID
+     * @throws {ActionException} If the command cannot be parsed
+     * @returns {Object} Responses to the user for the action. Usually involving either the 'response' or 'secret' fields, but sometimes both.
+     */
+    processInternalAction(inputString, userId) {
         let player = this.getPlayerById(userId);
         if (!player) return { secret: "Jeśli widzisz tą wiadomość, to znaczy, że o ile masz dostęp do tego kanału, z jakiegoś powodu nie ma cię w grze.\nJeśli jesteś kadronem, to normalne.\nJeśli jesteś uczestnikiem, to coś tu poszło nie tak. Daj znać Maćkowi." };
 
@@ -58,6 +81,7 @@ export class Game {
 
         let currentTile = this.board.get(player.x, player.y);
         let currentBiome = currentTile.biome;
+        let bundle = new ParseHelperBundle(this, currentTile, player);
 
         switch (command) {
             case ACTION.NONE:
@@ -68,7 +92,7 @@ export class Game {
                     player.remainingActions += cost;
                     return { secret: "Wybierz czego chcesz użyć." };
                 }
-                let itemsToUse = parseItemList(options.join(' '));
+                let itemsToUse = parseItemListOld(options.join(' '));
                 if (itemsToUse) { //Using an item
                     return { respond: "TODO" };
                 } else { //Using a building
@@ -105,7 +129,7 @@ export class Game {
                 return { respond: base + "TODO" };
             case ACTION.POMÓŻ:
                 return { respond: base + "TODO" };
-            case ACTION.PRACUJ:
+            case ACTION.PRACUJ: {
                 player.remainingActions += cost;// To make life simpler, we refund the cost here, and re-apply it if the action is successful
                 if (!options[0]) return { secret: "Wybierz cel." };
                 let possibleWorkTargets = currentTile.construction.filter(c => stringsEqual(c.getName(), options[0]));
@@ -121,6 +145,7 @@ export class Game {
                     return { respond: base + `Budowa zakończona sukcesem.` };
                 }
                 else return { respond: base + `Praca: ${workTarget.workDone}/${workTarget.requiredWork}` };
+            }
             case ACTION.SZUKAJ:
                 const lightLootPool = BIOME_DATA[currentBiome].searchLoot;
                 //TODO - check for appropriate tools to potentially apply bonuses
@@ -188,32 +213,32 @@ export class Game {
                 }
             case ACTION.ZJEDZ:
                 return { respond: base + "TODO" };
-            case ACTION.ZOSTAW:
-                if (!options[0]) return { secret: "Wybierz przedmiot." };
-                let itemToLeave = itemFromString(options.join(' '));
-                if (!itemToLeave || !player.hasItem(itemToLeave)) return { secret: "Nie posiadasz " + options.join(' ') };
-                if (!currentTile.items.canFit(itemToLeave)) return { secret: "Nie ma tu miejsca na ten przedmiot." };
+            case ACTION.ZOSTAW: {
+                let { item } = parsePlayerSingleItem(options, bundle);
+                if (!currentTile.items.canFit(item)) throw new ActionException("Nie ma tu miejsca na ten przedmiot.");
 
                 //At this point, the item exists in player's inventory and there's space for it in tile's inventory. We can do this.
-                player.removeItems(itemToLeave);
-                currentTile.items.addItem(itemToLeave);
+                player.removeItems(item);
+                currentTile.items.addItem(item);
 
                 return { secret: `Odkładasz ${options.join(' ')}.` + freeAction };
+            }
             case ACTION.DAJ:
                 return { respond: base + "TODO" };
 
 
-            case ACTION.IDŹ:
-                let newPos = moveCoordinates(getDirectionFromString(options[0]), player.x, player.y);
+            case ACTION.IDŹ: {
+                let { direction } = parseDirection(options);
+                let newPos = moveCoordinates(direction, player.x, player.y);
                 if (this.board.has(newPos)) {
                     player.x = newPos[0];
                     player.y = newPos[1];
                     this.board.updateOnePlayer(player);
                     return { respond: base + success };
                 } else {
-                    player.remainingActions += cost;
-                    return { secret: "Nie jesteś w stanie przemieścić się w tym kierunku." };
+                    throw new ActionException("Nie jesteś w stanie przemieścić się w tym kierunku.");
                 }
+            }
             case ACTION.PRZYZWIJ:
                 return { respond: base + "TODO" };
             case ACTION.TELEPORTUJ:
@@ -222,7 +247,7 @@ export class Game {
 
             case ACTION.BUDUJ:
                 if (!options[0]) return { secret: "Wybierz, jakich materiałów chcesz użyć." };
-                let itemList = parseItemList(options.join(' '));
+                let itemList = parseItemListOld(options.join(' '));
                 if (!itemList) return { respond: base + "Niestety, plany nie udają się, bo lista materiałów zawierała przedmiot, który nie istnieje." };
 
                 let building = null;
