@@ -13,26 +13,28 @@ export const ACTION = Object.freeze({
     NONE: 0,
 
     UŻYJ: 1,
-    POMÓŻ: 2,
-    PRACUJ: 3,
+    ZJEDZ: 2,
+    POMÓŻ: 3,
+    PRACUJ: 4,
 
     SZUKAJ: 10,
     ZBIERAJ: 11,
     KOP: 12,
-    EKWIPUNEK: 13,
-    WEŹ: 14,
-    WYRZUĆ: 15,
-    DODAJ: 16,
-    ZJEDZ: 17,
-    ZOSTAW: 18,
-    DAJ: 19,
 
-    IDŹ: 20,
-    PRZYZWIJ: 21,
-    TELEPORTUJ: 22,
+    EKWIPUNEK: 20,
+    WEŹ: 21,
+    ZOSTAW: 22,
+    WYRZUĆ: 23,
+    DODAJ: 24,
+    DAJ: 25,
+    DORZUĆ: 26,
 
-    BUDUJ: 30,
-    TWÓRZ: 31,
+    IDŹ: 31,
+    PRZYZWIJ: 32,
+    TELEPORTUJ: 33,
+
+    BUDUJ: 40,
+    TWÓRZ: 41,
 });
 
 export const DIRECTION = Object.freeze({

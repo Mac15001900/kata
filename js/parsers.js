@@ -31,8 +31,8 @@ export function parseItemList(strings) {
 }
 
 export function parsePlayerItemList(strings, bundle) {
-    let { res } = parseItemList(strings);
-    if (bundle.player.items.hasAllItems(res)) return { items: res, strings: [] };
+    let { items } = parseItemList(strings);
+    if (bundle.player.items.hasAllItems(items)) return { items, strings: [] };
     else throw new ActionException("Możesz użyć tylko przedmiotów, które posiadasz.");
 }
 
@@ -73,7 +73,7 @@ function itemFromString(string) {
 /**
  * Parses the name of a building on a specific tile
  * @param {String[]} strings2 Player's input, as an array of words
- * @param {ParseHelperBundle} bundle 
+ * @param {ParserHelperBundle} bundle 
  * @returns {{building: Building, strings: String[]}} The Building object and unconsumed input
  */
 export function parseBuildingOnTile(strings, bundle) {
@@ -96,7 +96,7 @@ export function parseBuildingOnTile(strings, bundle) {
 /**
  * Parses the name of construction happening on a specific tile
  * @param {String[]} strings2 Player's input, as an array of words
- * @param {ParseHelperBundle} bundle 
+ * @param {ParserHelperBundle} bundle 
  * @returns {{construction: ConstructionSite, strings: String[]}} The ConstructionSite object and unconsumed input
  */
 export function parseConstructionOnTile(strings, bundle) {
@@ -123,6 +123,28 @@ function parseBuilding(string) {
     return BUILDING_DATA.find(b => stringsEqual(b.name, string));
 }
 
+//Verifiers
+
+/**
+ * Checks if an input can be parsed with a given parser. Useful for commands where input can be
+ * parsed in mutiple different ways (e.g. UŻYJ working on both items and buildings)
+ * @param {Function} parser Input parser to check
+ * @param {String[]} strings Player's input, as an array of words
+ * @param {ParserHelperBundle} bundle 
+ * @returns {Boolean} Whether the given input can be parsed with the given parses
+ */
+export function checkParser(parser, strings, bundle) {
+    try {
+        parser(strings, bundle);
+        return true;
+    } catch (e) {
+        if (e instanceof ActionException) {
+            return false;
+        } else throw e
+    }
+}
+
+
 /**
  * Represents a problem that makes an action invalid and results in the action point not being spent.
  * Usually arises from invalid user input, but can also be caused by the game state, e.g.
@@ -140,7 +162,7 @@ export class ActionException extends Error {
     }
 }
 
-export class ParseHelperBundle {
+export class ParserHelperBundle {
     /**
      * Bundle of objects that can be useful to parsers, passed to all of them
      * @param {Game} game 

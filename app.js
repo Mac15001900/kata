@@ -45,7 +45,9 @@ const DEBUG = {
     addMacOnStart: true,
     updateMapOnAction: true,
     runTestsOnStart: true,
+    ignoreBuildingCosts: false,
 }
+global.debug = DEBUG;
 
 //Setup Eris
 const erisBot = new Eris(process.env["DISCORD_TOKEN"], {

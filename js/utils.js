@@ -97,7 +97,14 @@ export function printItem(item) {
     return capitalize(item).replace(/_/g, ' ');
 }
 
-export function printifyItemList(list) {
+export function printItemList(items) {
+    if (items.length === 0) return "—";
+    if (items.length === 1) return printItem(items[0]);
+    let printable = items.map(printItem);
+    return printable.slice(0, -1).join(', ') + ' i ' + printable.at(-1);
+}
+
+export function printifyInventory(list) {
     if (list.length === 0) return "—";
     let itemList = list.map(printItem).sort();
     let res = [];
@@ -185,8 +192,18 @@ export function getBuildingData(buildingType) {
     return BUILDING_DATA.find(b => b.id === buildingType);
 }
 
-export function getCraftingRecipe(ingredients, building) {
-    return RECIPES.find(r => r.input === ingredients && r.building === building);
+export function getCraftingRecipe(ingredients, buildingId) {
+    return RECIPES.find(r => arraysEqual(r.input, ingredients) && r.building === buildingId);
 }
 
-global.test = parseBuildingAndItems
+export function adjustWordPl(amount, singular, nominative, genitive) {
+    if (amount === 1) return singular;
+    else if (useGenitive(amount)) return genitive;
+    else return nominative;
+}
+
+function useGenitive(amount) {
+    if (amount % 100 - amount % 10 === 10) return true;
+    if ([2, 3, 4].includes(amount % 10)) return false;
+    return true;
+}

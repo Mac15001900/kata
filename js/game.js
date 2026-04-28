@@ -1,11 +1,12 @@
 import { BUILDING_DATA } from "../data/building.js";
 import { Tile, Board, Player } from "./objects.js"
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
-import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, parseItemList as parseItemListOld, arraysEqual, printifyItemList, parseBuildingAndItems, getCraftingRecipe } from "./utils.js";
+import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, arraysEqual, printifyInventory, parseBuildingAndItems, getCraftingRecipe, printItemList, adjustWordPl } from "./utils.js";
 import fs from 'fs';
 import { BIOME, ACTION, DIRECTION } from './enums.js';
 import { BIOME_DATA } from "../data/biomes.js";
-import { ParseHelperBundle as ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile } from "./parsers.js";
+import { ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser } from "./parsers.js";
+import { getFuelValue } from "../data/items.js";
 
 export class Game {
     constructor(opts) {
@@ -44,7 +45,7 @@ export class Game {
         } catch (e) {
             if (e instanceof ActionException) {
                 player.usedActions = playerActions; //Reset any used up action points
-                return { secret: e.message };
+                return { secret: ":cross_mark: " + e.message };
             } else throw e
         }
         return res;
@@ -85,47 +86,45 @@ export class Game {
 
         switch (command) {
             case ACTION.NONE:
-                return { respond: base + "Niestety okazuje się, że ta akcji nic nie robi." };
+                return { respond: base + "Niestety okazuje się, że ta akcja nic nie robi." };
 
-            case ACTION.UŻYJ:
-                if (!options[0]) {
-                    player.remainingActions += cost;
-                    return { secret: "Wybierz czego chcesz użyć." };
-                }
-                let itemsToUse = parseItemListOld(options.join(' '));
-                if (itemsToUse) { //Using an item
-                    return { respond: "TODO" };
-                } else { //Using a building
-                    let parsed = parseBuildingAndItems(options.join(' '));
-                    if (!parsed) return { respond: base + "Niestety, próba użycia budynków lub przedmiotów, które nie istnieją, nie powodzi się." };
-                    let { building: buildingData, items, number } = parsed;
+            //---------- Basic actions ----------
+            case ACTION.UŻYJ: {
+                if (!options[0]) throw new ActionException("Wybierz przedmiot lub budynek.");
 
-                    if (!currentTile.hasBuilding(buildingData.id)) {
-                        player.remainingActions += cost;
-                        return { secret: `${buildingData.name} nie istnieje w tym sektorze.` };
-                    }
+                if (checkParser(parsePlayerSingleItem, options, bundle)) { //Using an item
 
-                    //Crafting buildings
-                    if (buildingData.canCraft) {
-                        if (items.length === 0) {
-                            player.remainingActions += cost;
-                            return { secret: options.join(' ') + " wymaga przedmiotów do użycia." };
-                        }
+                } else if (checkParser(parseBuildingOnTile, options, bundle)) {
+                    let { building, strings } = parseBuildingOnTile(options, bundle);
+                    if (building.data.canBeUsed) { //Using a building without items
 
-                        let recipe = getCraftingRecipe(items, buildingData);
+                    } else if (building.data.canCraft) { //Using a building with items
+
+                        let { items } = parsePlayerItemList(strings, bundle);
+                        let recipe = getCraftingRecipe(items, building.getId());
+
+                        //This is intentionally *not* throwing the exception; experimenting with ingredients is meant to use up an action
                         if (!recipe) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić." };
+                        if (!building.hasEnoughFuel()) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić.\nChociaż masz wrażenie, że mogłoby to się udać przy większej temperaturze. Możesz trzeba tu najpierw dorzucić paliwa?" };
 
-                        // if (!buildingData.hasEnou)
+                        if (!player.items.canFitItemList(recipe.output))
+                            throw new ActionException(`Nie masz miejsca na ${recipe.output.length === 1 ? "przedmiot, który" : "przedmioty, które"} próbujesz stworzyć.`);
 
+                        player.items.removeItemList(recipe.input);
+                        player.items.addItemList(recipe.output);
+                        building.runOneCraft();
+
+                        return { respond: base + `Tworzysz:\n${printItemList(recipe.output)}.` };
+                    } else {
+                        throw new ActionException("Tego budynku nie da się użyć.");
                     }
-
-
-
-
-
-
+                } else {
+                    throw new ActionException("Wybierz posiadany przedmiot lub istniejący budynek.");
                 }
 
+                return { respond: base + "TODO" };
+            }
+            case ACTION.ZJEDZ:
                 return { respond: base + "TODO" };
             case ACTION.POMÓŻ:
                 return { respond: base + "TODO" };
@@ -140,6 +139,8 @@ export class Game {
                 }
                 else return { respond: base + `Praca: ${construction.workDone}/${construction.requiredWork}` };
             }
+
+            //---------- Gathering actions ----------
             case ACTION.SZUKAJ:
                 const lightLootPool = BIOME_DATA[currentBiome].searchLoot;
                 //TODO - check for appropriate tools to potentially apply bonuses
@@ -157,13 +158,14 @@ export class Game {
                 return { respond: base + `Zdobywasz 1x ${capitalize(newItem)}.` };
             case ACTION.KOP:
                 return { respond: base + "TODO" };
+
+            //---------- Inventory actions ----------
             case ACTION.EKWIPUNEK:
                 return { secret: player.printEquipment() + freeAction };
             case ACTION.WEŹ: {
-                if (!options[0]) return { secret: "Wybierz przedmiot." };
                 let { item } = parseSingleItem(options);
                 if (!currentTile.items.hasItem(item)) throw new ActionException("Nie ma tutaj " + options.join(' '));
-                if (!player.items.canFit(item)) throw new ActionException("Nie masz na to miejsca w ekwipunku.");
+                if (!player.items.canFitItem(item)) throw new ActionException("Nie masz na to miejsca w ekwipunku.");
 
                 currentTile.items.removeItem(item);
                 player.addItem(item);
@@ -186,14 +188,12 @@ export class Game {
                 if (construction.hasAllMaterials()) {
                     return { respond: base + `To ostatni materiał którego wymaga ${construction.getName()}.\nPraca: 0/${construction.requiredWork}` + freeAction };
                 } else {
-                    return { respond: base + `Pozostałe potrzebne materiały:\n${printifyItemList(construction.materialsRemaining)}\nPraca: 0/${construction.requiredWork}` + freeAction };
+                    return { respond: base + `Pozostałe potrzebne materiały:\n${printifyInventory(construction.materialsRemaining)}\nPraca: 0/${construction.requiredWork}` + freeAction };
                 }
             }
-            case ACTION.ZJEDZ:
-                return { respond: base + "TODO" };
             case ACTION.ZOSTAW: {
                 let { item } = parsePlayerSingleItem(options, bundle);
-                if (!currentTile.items.canFit(item)) throw new ActionException("Nie ma tu miejsca na ten przedmiot.");
+                if (!currentTile.items.canFitItem(item)) throw new ActionException("Nie ma tu miejsca na ten przedmiot.");
 
                 player.removeItems(item);
                 currentTile.items.addItem(item);
@@ -202,8 +202,21 @@ export class Game {
             }
             case ACTION.DAJ:
                 return { respond: base + "TODO" };
+            case ACTION.DORZUĆ: {
+                let { building, strings } = parseBuildingOnTile(options, bundle);
+                let { item } = parsePlayerSingleItem(strings, bundle);
+
+                if (getFuelValue(item) === 0) throw new ActionException("Ten przedmiot nie nadaje się na paliwo.");
+
+                building.addFuelItem(item);
+                player.items.removeItem(item);
+                let ops = building.operationsAvailable();
+                return { respond: `${building.getName()} ma teraz wystarczająco paliwa na ${ops} ${adjustWordPl(ops, "operację", "operacje", "operacji")}.` };
+            }
 
 
+
+            //---------- Movement actions ----------
             case ACTION.IDŹ: {
                 let { direction } = parseDirection(options);
                 let newPos = moveCoordinates(direction, player.x, player.y);
@@ -221,13 +234,14 @@ export class Game {
             case ACTION.TELEPORTUJ:
                 return { respond: base + "TODO" };
 
-
+            //---------- Creation actions ----------
             case ACTION.BUDUJ: {
                 if (!options[0]) throw new ActionException("Wybierz, jakich materiałów chcesz użyć.");
                 let { items } = parseItemList(options, bundle);
 
                 for (let i = 0; i < BUILDING_DATA.length; i++) {
                     if (arraysEqual(BUILDING_DATA[i].cost, items)) {
+                        if (currentTile.getConstruction(BUILDING_DATA[i].id)) throw new ActionException("Tu już powstaje taki budynek.");
                         currentTile.startConstruction(BUILDING_DATA[i]);
                         return { respond: base + `Zaczynasz budować ${BUILDING_DATA[i].name}.` };
                     }

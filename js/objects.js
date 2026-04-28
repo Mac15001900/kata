@@ -1,8 +1,8 @@
 import { getRandomLetters } from './utils.js';
 import { BIOME_DATA } from '../data/biomes.js';
 import { BIOME, ACTION, DIRECTION, BUFF } from './enums.js';
-import { capitalize, stringsEqual, printItem, printifyItemList } from './utils.js';
-import { isHeavyItem } from '../data/items.js';
+import { capitalize, stringsEqual, printItem, printifyInventory } from './utils.js';
+import { isHeavyItem, getFuelValue } from '../data/items.js';
 
 export class Tile {
     constructor(x, y, biome, buildings = []) {
@@ -48,16 +48,16 @@ export class Tile {
     }
 
     hasBuilding(id) {
-        return this.buildings.some(b => b.id === id);
+        return this.buildings.some(b => b.getId() === id);
     }
 
     hasMultipleBuildings(id) {
-        return this.buildings.filter(b => b.id === id).length > 1;
+        return this.buildings.filter(b => b.getId() === id).length > 1;
     }
 
     getBuilding(id, number) {
-        if (!number) return this.buildings.find(b => b.id === id);
-        else return this.buildings.filter(b => b.id === id)[number - 1];
+        if (!number) return this.buildings.find(b => b.getId() === id);
+        else return this.buildings.filter(b => b.getId() === id)[number - 1];
     }
 
     startConstruction(buildingData) {
@@ -284,12 +284,29 @@ export class Building {
         return this.data.name;
     }
 
+    getId() {
+        return this.data.id;
+    }
+
     needsFuel() {
         return this.data.fuelPerOperation > 0;
     }
 
     hasEnoughFuel() {
-        return !this.data.fuelPerOperation || this.fuel >= this.data.fuelPerOperation
+        return this.operationsAvailable() >= 1;
+    }
+
+    operationsAvailable() {
+        if (this.needsFuel()) return Math.floor(this.fuel / this.data.fuelPerOperation);
+        else return Infinity;
+    }
+
+    runOneCraft() {
+        if (this.needsFuel()) this.fuel -= this.data.fuelPerOperation;
+    }
+
+    addFuelItem(item) {
+        this.fuel += getFuelValue(item);
     }
 }
 
@@ -319,6 +336,12 @@ export class ItemContainer {
         else return this.addLightItem(item);
     }
 
+    addItemList(items) {
+        for (let i = 0; i < items.length; i++) {
+            this.addItem(items[i]);
+        }
+    }
+
     removeItem(item) {
         let index = this.heavyItems.indexOf(item);
         if (index > -1) {
@@ -340,14 +363,20 @@ export class ItemContainer {
         }
     }
 
+    removeItemList(items) {
+        for (let i = 0; i < items.length; i++) {
+            this.removeItem(items[i]);
+        }
+    }
+
     hasItem(item) {
         return this.heavyItems.includes(item) || this.lightItems.includes(item);
     }
 
     hasAllItems(items) {
         let remaining = [...this.heavyItems.concat(this.lightItems)];
-        for (let item in items) {
-            let index = remaining.indexOf(item);
+        for (let key in items) {
+            let index = remaining.indexOf(items[key]);
             if (index > -1) remaining.splice(index, 1);
             else return false;
         }
@@ -363,9 +392,14 @@ export class ItemContainer {
         return this.maxSize - this.heavyItems.length;
     }
 
-    canFit(item) {
+    canFitItem(item) {
         if (this.maxSize === 0) return false; //If there is no storage at all, we can't even store light items
         return isHeavyItem(item) ? this.getRemainingCapacity() > 0 : true;
+    }
+
+    canFitItemList(items) {
+        let heavyItems = items.filter(isHeavyItem);
+        return this.getRemainingCapacity() >= heavyItems.length;
     }
 
     getMaxCapacity() {
@@ -383,9 +417,9 @@ export class ItemContainer {
 
     printItems() {
         let res = `Ciężkie przedmioty (${this.heavyItems.length}/${this.maxSize}):\n\n`
-        res += printifyItemList(this.heavyItems);
+        res += printifyInventory(this.heavyItems);
         res += `\n\nLekkie przedmioty:\n\n`;
-        res += printifyItemList(this.lightItems);
+        res += printifyInventory(this.lightItems);
         return res;
     }
 

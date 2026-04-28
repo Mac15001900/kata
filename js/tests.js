@@ -1,5 +1,5 @@
 import { Game } from "./game.js";
-import { ITEM } from "./enums.js";
+import { ITEM, BUILDING } from "./enums.js";
 
 
 let testsPassed = 0;
@@ -18,7 +18,7 @@ function test(value, errorMessage) {
 }
 
 function testEqual(a, b, errorMessage) {
-    test(a === b, (errorMessage || `Test ${testsPassed + 1} failed`) + `. Exptected value: ${b}. Actual value: ${a}.`);
+    test(a === b, (errorMessage || `Test ${testsRan + 1} failed`) + `. Exptected value: ${b}. Actual value: ${a}.`);
 }
 
 function testPlayerPosition(player, x, y) {
@@ -36,8 +36,9 @@ function action(string, repeat = 1) {
     return res;
 }
 
-function assertSecretResponse() {
-    test(actionResult && actionResult.secret && !actionResult.respond, "Didn't get a secret response when expected. Got a public response: " + actionResult.respond);
+function assertSecretResponse(flip = false) {
+    if (flip) test(actionResult && !actionResult.secret && actionResult.respond, "Didn't get a public response when expected. Got a secret response: " + actionResult.secret);
+    else test(actionResult && actionResult.secret && !actionResult.respond, "Didn't get a secret response when expected. Got a public response: " + actionResult.respond);
 }
 
 export function bigGameTest() {
@@ -45,6 +46,7 @@ export function bigGameTest() {
     testsRan = 0;
     actionLog = [];
     global.actionLog = actionLog;
+    //#region Basic tests
     //Game and player creation
     game = new Game();
     test(game != null, "Game created");
@@ -109,7 +111,7 @@ export function bigGameTest() {
     action("wyrzuć 10 Marmur");
     testEqual(player.items.getItemAmount(ITEM.MARMUR), 2, "Wrong item thrown away");
 
-    //Building a house
+    //#region Home construction
     let cityTile = game.board.get(player.x, player.y);
     testEqual(cityTile.x, player.x, "Tile position incorrect");
     testEqual(cityTile.y, player.y, "Tile position incorrect");
@@ -216,7 +218,7 @@ export function bigGameTest() {
     testEqual(secondCityTile.buildings.length, 5, "house on 0,1 not built");
     testEqual(secondCityTile.items.getMaxCapacity(), 4 * 5, "Storage capacity doesn't stack");
 
-    //Test storing and withdrawing items
+    //#region Item storage
     let storage = secondCityTile.items;
     testEqual(storage.getItemAmount(ITEM.DREWNO), 0, "Storage not empty");
     testEqual(storage.getItemAmount(), 0, "Storage not empty");
@@ -270,8 +272,82 @@ export function bigGameTest() {
     action("weź Marmur");
     testEqual(player.items.getItemAmount(), 2);
     testEqual(storage.getItemAmount(), 6 + 8 - 2);
+    action("zostaw drewno");
+    action("zostaw marmur");
+    testEqual(player.items.getItemAmount(), 0);
 
+    //#region Using a furnace
+    action("idź prawo");
+    testPlayerPosition(player, 1, 1);
+    action("zbierz");
+    action("zbierz");
+    action("użyj dom marmur marmur");
+    assertSecretResponse();
+    testEqual(cityTile.construction.length, 0, "Weird construction from nowhere");
+    action("buduj marmur marmur");
+    testEqual(cityTile.construction.length, 1, "Construction failed to start");
+    action("dodaj piec marmur");
+    action("dodaj piec marmur");
+    action("pracuj piec");
+    action("pracuj piec");
+    testEqual(cityTile.construction.length, 0, "Piec not finished");
+    test(cityTile.hasBuilding(BUILDING.PIEC));
+    let furnace = cityTile.getBuilding(BUILDING.PIEC);
+    test(furnace);
+    testEqual(furnace.getId(), BUILDING.PIEC);
+    testEqual(furnace.operationsAvailable(), 0);
+    test(furnace.needsFuel());
+    test(!furnace.hasEnoughFuel());
 
+    action("użyj");
+    assertSecretResponse();
+    action("użyj piec");
+    assertSecretResponse();
+    action("użyj piec ruda żelaza pomarańcza");
+    assertSecretResponse();
+    action("użyj piec ruda żelaza ruda żelaza");
+    assertSecretResponse();
+
+    action("idź prawo");
+    action("idź prawo");
+    action("zbierz");
+    action("zbierz");
+    action("idź lewo");
+    action("idź lewo");
+    action("użyj piec ruda żelaza ruda żelaza");
+    testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 2);
+    assertSecretResponse(true);
+
+    action("zostaw ruda żelaza");
+    testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 1);
+    test(cityTile.items.hasItem(ITEM.RUDA_ŻELAZA));
+
+    action("idź lewo")
+    action("zbierz");
+    action("idź prawo");
+    action("dorzuć");
+    assertSecretResponse();
+    action("dorzuć piec");
+    assertSecretResponse();
+    action("dorzuć piec szkło");
+    assertSecretResponse();
+    action("dorzuć piec ruda żelaza");
+    assertSecretResponse();
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 1);
+    action("dorzuć piec drewno");
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 0);
+    testEqual(furnace.operationsAvailable(), 1);
+
+    testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 1);
+    action("weź ruda żelaza");
+    testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 2);
+    test(player.items.hasAllItems([ITEM.RUDA_ŻELAZA]));
+    test(player.items.hasAllItems([ITEM.RUDA_ŻELAZA, ITEM.RUDA_ŻELAZA]));
+    test(!player.items.hasAllItems([ITEM.RUDA_ŻELAZA, ITEM.RUDA_ŻELAZA, ITEM.RUDA_ŻELAZA]));
+    action("użyj piec ruda żelaza ruda żelaza");
+    testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 0);
+    testEqual(player.items.getItemAmount(ITEM.ŻELAZO), 1);
+    testEqual(furnace.operationsAvailable(), 0);
 
     console.log(`Ran ${testsRan} tests, ${testsPassed} passed.`);
     return testsRan === testsPassed;
