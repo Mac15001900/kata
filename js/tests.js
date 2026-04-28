@@ -159,6 +159,8 @@ export function bigGameTest() {
     action("dodaj Dom Drewno");
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 1, "Wood not spent");
     test(!constructionSite.hasAllMaterials());
+    action("pracuj Dom");
+    testEqual(constructionSite.workRemaining(), 4, "Work accepted before finishing placing materials");
     action("dodaj Dom Drewno");
     test(constructionSite.hasAllMaterials(), "Collected house materials failed");
 

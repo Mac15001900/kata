@@ -44,6 +44,7 @@ global.TEST_SERVER = TEST_SERVER;
 const DEBUG = {
     addMacOnStart: true,
     updateMapOnAction: true,
+    runTestsOnStart: true,
 }
 
 //Setup Eris
@@ -293,3 +294,5 @@ async function updateMapFile() {
     const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
     fs.writeFileSync('tableThing.png', buffer);
 }
+
+if (DEBUG.runTestsOnStart) bigGameTest();

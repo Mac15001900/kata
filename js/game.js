@@ -5,7 +5,7 @@ import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, p
 import fs from 'fs';
 import { BIOME, ACTION, DIRECTION } from './enums.js';
 import { BIOME_DATA } from "../data/biomes.js";
-import { ParseHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem } from "./parsers.js";
+import { ParseHelperBundle as ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile } from "./parsers.js";
 
 export class Game {
     constructor(opts) {
@@ -43,7 +43,7 @@ export class Game {
             res = this.processInternalAction(inputString, userId);
         } catch (e) {
             if (e instanceof ActionException) {
-                player.usedActions = playerActions; //Reset any used up actions
+                player.usedActions = playerActions; //Reset any used up action points
                 return { secret: e.message };
             } else throw e
         }
@@ -54,7 +54,7 @@ export class Game {
      * Processes an action from a user. Can throw ParsingException if parsing user's input fails.
      * @param {String} inputString The full string the user typed for the /akcja command
      * @param {Snowflake} userId Discord user ID
-     * @throws {ActionException} If the command cannot be parsed
+     * @throws {ActionException} If the command cannot be parsed or the action fails for other reason
      * @returns {Object} Responses to the user for the action. Usually involving either the 'response' or 'secret' fields, but sometimes both.
      */
     processInternalAction(inputString, userId) {
@@ -81,7 +81,7 @@ export class Game {
 
         let currentTile = this.board.get(player.x, player.y);
         let currentBiome = currentTile.biome;
-        let bundle = new ParseHelperBundle(this, currentTile, player);
+        let bundle = new ParserHelperBundle(this, currentTile, player);
 
         switch (command) {
             case ACTION.NONE:
@@ -130,21 +130,15 @@ export class Game {
             case ACTION.POMÓŻ:
                 return { respond: base + "TODO" };
             case ACTION.PRACUJ: {
-                player.remainingActions += cost;// To make life simpler, we refund the cost here, and re-apply it if the action is successful
-                if (!options[0]) return { secret: "Wybierz cel." };
-                let possibleWorkTargets = currentTile.construction.filter(c => stringsEqual(c.getName(), options[0]));
-                if (possibleWorkTargets.length === 0) return { secret: "Nie ma tutaj takiego celu." };
+                let { construction } = parseConstructionOnTile(options, bundle);
+                if (!construction.hasAllMaterials()) return { secret: `Ten cel nie potrzebuje jeszcze pracy.` };
 
-                let workTarget = possibleWorkTargets.filter(t => t.hasAllMaterials())[0];
-                if (!workTarget) return { secret: `${possibleWorkTargets.length > 1 ? "Żaden cel" : "Ten cel"} nie potrzebuje jeszcze pracy.` };
-
-                player.remainingActions -= cost; //Action successful
-                workTarget.addWork(player.getActionStrength(ACTION.PRACUJ));
-                if (workTarget.isDone()) {
+                construction.addWork(player.getActionStrength(ACTION.PRACUJ));
+                if (construction.isDone()) {
                     currentTile.updateConstruction();
                     return { respond: base + `Budowa zakończona sukcesem.` };
                 }
-                else return { respond: base + `Praca: ${workTarget.workDone}/${workTarget.requiredWork}` };
+                else return { respond: base + `Praca: ${construction.workDone}/${construction.requiredWork}` };
             }
             case ACTION.SZUKAJ:
                 const lightLootPool = BIOME_DATA[currentBiome].searchLoot;
@@ -165,59 +159,42 @@ export class Game {
                 return { respond: base + "TODO" };
             case ACTION.EKWIPUNEK:
                 return { secret: player.printEquipment() + freeAction };
-            case ACTION.WEŹ:
+            case ACTION.WEŹ: {
                 if (!options[0]) return { secret: "Wybierz przedmiot." };
-                let itemToTake = itemFromString(options.join(' '));
-                if (!itemToTake || !currentTile.items.hasItem(itemToTake)) return { secret: "Nie ma tutaj " + options.join(' ') };
-                if (!player.items.canFit(itemToTake)) return { secret: "Nie masz na to miejsca w ekwipunku." };
+                let { item } = parseSingleItem(options);
+                if (!currentTile.items.hasItem(item)) throw new ActionException("Nie ma tutaj " + options.join(' '));
+                if (!player.items.canFit(item)) throw new ActionException("Nie masz na to miejsca w ekwipunku.");
 
-                currentTile.items.removeItem(itemToTake);
-                player.addItem(itemToTake);
+                currentTile.items.removeItem(item);
+                player.addItem(item);
                 return { secret: `Zabierasz ${options.join(' ')}.` + freeAction };
-            case ACTION.WYRZUĆ:
-                let amountToRemove = 1;
-                let itemToRemove = itemFromString(options.join(' '));
-                let userItemString = options[0];
-                if (options[0] !== undefined && !isNaN(parseInt(options[0]))) {
-                    amountToRemove = parseInt(options[0]);
-                    itemToRemove = itemFromString(options.slice(1).join(' '));
-                    userItemString = options[1];
-                }
-                if (itemToRemove && player.hasItem(itemToRemove, amountToRemove)) {
-                    player.removeItems(itemToRemove, amountToRemove);
-                    return { secret: `Wyrzucasz ${amountToRemove}x ${capitalize(itemToRemove)}.` + freeAction };
+            }
+            case ACTION.WYRZUĆ: {
+                let { item } = parsePlayerSingleItem(options, bundle);
+                player.removeItems(item, 1);
+                return { secret: `Wyrzucasz 1x ${capitalize(item)}.` + freeAction };
+            }
+            case ACTION.DODAJ: {
+                let { construction, strings } = parseConstructionOnTile(options, bundle);
+                let { item } = parsePlayerSingleItem(strings, bundle);
+
+                if (!construction.needsItem(item)) throw new ActionException(`Ten cel nie wymaga tego materiału.`)
+
+                construction.placeItem(item);
+                player.removeItems(item);
+
+                if (construction.hasAllMaterials()) {
+                    return { respond: base + `To ostatni materiał którego wymaga ${construction.getName()}.\nPraca: 0/${construction.requiredWork}` + freeAction };
                 } else {
-                    return { secret: `Nie posiadasz ${amountToRemove}x ${capitalize(userItemString)}.` + freeAction };
+                    return { respond: base + `Pozostałe potrzebne materiały:\n${printifyItemList(construction.materialsRemaining)}\nPraca: 0/${construction.requiredWork}` + freeAction };
                 }
-            case ACTION.DODAJ:
-                if (!options[0]) return { secret: "Wybierz cel." };
-                let possibleTargets = currentTile.construction.filter(c => stringsEqual(c.getName(), options[0]));
-                if (possibleTargets.length === 0) return { secret: "Nie ma tutaj takiego celu." };
-
-                // let target = possibleTargets[0];
-
-                if (!options[1]) return { secret: "Wybierz przedmiot." };
-                let itemToAdd = itemFromString(options.slice(1).join(' '));
-                if (!itemToAdd || !player.hasItem(itemToAdd)) return { secret: "Nie posiadasz " + options.slice(1).join(' ') };
-
-                let target = possibleTargets.filter(t => t.needsItem(itemToAdd))[0];
-                if (!target) return { secret: `${possibleTargets.length > 1 ? "Żaden cel" : "Ten cel"} nie potrzebuje tego przedmiotu.` };
-
-                target.placeItem(itemToAdd);
-                player.removeItems(itemToAdd);
-
-                if (target.hasAllMaterials()) {
-                    return { respond: base + `To ostatni materiał którego wymaga ${target.getName()}.\nPraca: 0/${target.requiredWork}` + freeAction };
-                } else {
-                    return { respond: base + `Pozostałe potrzebne materiały:\n${printifyItemList(target.materialsRemaining)}\nPraca: 0/${target.requiredWork}` + freeAction };
-                }
+            }
             case ACTION.ZJEDZ:
                 return { respond: base + "TODO" };
             case ACTION.ZOSTAW: {
                 let { item } = parsePlayerSingleItem(options, bundle);
                 if (!currentTile.items.canFit(item)) throw new ActionException("Nie ma tu miejsca na ten przedmiot.");
 
-                //At this point, the item exists in player's inventory and there's space for it in tile's inventory. We can do this.
                 player.removeItems(item);
                 currentTile.items.addItem(item);
 
@@ -245,19 +222,18 @@ export class Game {
                 return { respond: base + "TODO" };
 
 
-            case ACTION.BUDUJ:
-                if (!options[0]) return { secret: "Wybierz, jakich materiałów chcesz użyć." };
-                let itemList = parseItemListOld(options.join(' '));
-                if (!itemList) return { respond: base + "Niestety, plany nie udają się, bo lista materiałów zawierała przedmiot, który nie istnieje." };
+            case ACTION.BUDUJ: {
+                if (!options[0]) throw new ActionException("Wybierz, jakich materiałów chcesz użyć.");
+                let { items } = parseItemList(options, bundle);
 
-                let building = null;
                 for (let i = 0; i < BUILDING_DATA.length; i++) {
-                    if (arraysEqual(BUILDING_DATA[i].cost, itemList)) {
+                    if (arraysEqual(BUILDING_DATA[i].cost, items)) {
                         currentTile.startConstruction(BUILDING_DATA[i]);
                         return { respond: base + `Zaczynasz budować ${BUILDING_DATA[i].name}.` };
                     }
                 }
-                return { respond: base + `Niestety, ta lista materiałów nie odpowiada żadnemu budynkowi.` };
+                return { respond: base + `Niestety, nie udaje ci się zaprojektować żadnego budynku używając tych materiałów.` };
+            }
             case ACTION.TWÓRZ:
                 return { respond: base + "TODO" };
             default:

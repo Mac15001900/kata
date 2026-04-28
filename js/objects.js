@@ -65,6 +65,10 @@ export class Tile {
         this.construction.push(new ConstructionSite(buildingData));
     }
 
+    getConstruction(buildngId) {
+        return this.construction.find(c => c.buildingData.id === buildngId);
+    }
+
     updateConstruction() {
         let finishedBuildings = this.construction.filter(c => c.isDone());
         if (finishedBuildings.length === 0) return;
