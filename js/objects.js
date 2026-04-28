@@ -47,17 +47,17 @@ export class Tile {
         return res.join('\n');
     }
 
-    hasBuilding(type) {
-        return this.buildings.includes(type);
+    hasBuilding(id) {
+        return this.buildings.some(b => b.id === id);
     }
 
-    hasMultipleBuildings(type) {
-        return this.buildings.filter(b => b === type).length > 1;
+    hasMultipleBuildings(id) {
+        return this.buildings.filter(b => b.id === id).length > 1;
     }
 
-    getBuilding(type, number) {
-        if (!number) return this.buildings.find(b => b === type);
-        else return this.buildings.filter(b => b === type)[number - 1];
+    getBuilding(id, number) {
+        if (!number) return this.buildings.find(b => b.id === id);
+        else return this.buildings.filter(b => b.id === id)[number - 1];
     }
 
     startConstruction(buildingData) {
