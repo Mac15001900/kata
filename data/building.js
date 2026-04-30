@@ -25,5 +25,11 @@ export const BUILDING_DATA = [
         name: 'Testowy pałac z wielu słów',
         cost: [ITEM.MARMUR, ITEM.MARMUR, ITEM.JABŁKO, ITEM.SZKŁO],
         canBeUsed: true,
+    }, {
+        id: BUILDING.FARMA,
+        name: 'Farma',
+        cost: [ITEM.DREWNO, ITEM.BIOMASA, ITEM.BIOMASA],
+        canCraft: true,
+        craftingSpeed: 1,
     }
 ]

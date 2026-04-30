@@ -264,6 +264,8 @@ export class Building {
     constructor(buildingData) {
         this.data = buildingData;
         this.fuel = 0;
+        this.currentRecipe = null;
+        this.craftingTime = 0;
     }
 
     applyBuffs(players) {
@@ -309,6 +311,36 @@ export class Building {
 
     addFuelItem(item) {
         this.fuel += getFuelValue(item);
+    }
+
+    canStartCrafting() {
+        return this.currentRecipe === null;
+    }
+
+    startCrafting(recipe) {
+        this.currentRecipe = recipe;
+        this.craftingTime = 0;
+    }
+
+    endCycle() {
+        this.craftingTime++;
+    }
+
+    canHarvestOutput() {
+        return this.currentRecipe && this.craftingTime >= this.currentRecipe.craftingTime;
+    }
+
+    getCraftingOutput() {
+        return this.currentRecipe ? this.currentRecipe.output : null;
+    }
+
+    harvestCraftingOutput() {
+        if (!this.canHarvestOutput()) return null;
+
+        this.craftingTime = 0;
+        let res = this.currentRecipe.output;
+        this.currentRecipe = null;
+        return res;
     }
 }
 

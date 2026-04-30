@@ -93,11 +93,11 @@ export class Game {
                 if (!options[0]) throw new ActionException("Wybierz przedmiot lub budynek.");
 
                 if (checkParser(parsePlayerSingleItem, options, bundle)) { //Using an item
-
+                    //TODO
                 } else if (checkParser(parseBuildingOnTile, options, bundle)) {
                     let { building, strings } = parseBuildingOnTile(options, bundle);
                     if (building.data.canBeUsed) { //Using a building without items
-
+                        //TODO
                     } else if (building.data.canCraft) { //Using a building with items
 
                         let { items } = parsePlayerItemList(strings, bundle);

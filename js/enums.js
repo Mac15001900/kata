@@ -109,5 +109,6 @@ export const BUILDING = Object.freeze({
     DOM: 1,
     MAGAZYN: 2,
     PIEC: 3,
+    FARMA: 4,
     TEST: 42,
 });
