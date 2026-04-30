@@ -14,7 +14,7 @@ function test(value, errorMessage) {
     testsRan++;
     if (value) testsPassed++;
     else if (errorMessage) console.error("Test failed: " + errorMessage);
-    else console.error((testsPassed + 1) + "th test failed");
+    else console.error((testsRan + 1) + "th test failed");
 }
 
 function testEqual(a, b, errorMessage) {
@@ -42,6 +42,7 @@ function assertSecretResponse(flip = false) {
 }
 
 export function bigGameTest() {
+    console.log("Starting tests...");
     testsPassed = 0;
     testsRan = 0;
     actionLog = [];
@@ -365,6 +366,10 @@ export function bigGameTest() {
     testEqual(furnace.operationsAvailable(), 0);
     test(discoveries.items.includes(ITEM.ŻELAZO));
     test(discoveries.recipes.includes("Przetapianie rudy żelaza"));
+    action("zostaw żelazo");
+    testEqual(player.items.getItemAmount(ITEM.ŻELAZO), 0);
+    testEqual(cityTile.items.getItemAmount(ITEM.ŻELAZO), 1);
+
 
 
     //#region Eating
@@ -386,11 +391,19 @@ export function bigGameTest() {
         if (i > 1000) throw "No rainbow flower found";
     }
     test(player.items.hasItem(ITEM.TĘCZOWY_KWIAT));
+    test(discoveries.items.includes(ITEM.TĘCZOWY_KWIAT));
     testEqual(player.maxMana, 0);
     action("zjedz tęczowy kwiat");
     test(!player.items.hasItem(ITEM.TĘCZOWY_KWIAT));
     test(player.items.hasItem(ITEM.NASIONA_TĘCZOWY_KWIAT));
+    test(discoveries.items.includes(ITEM.NASIONA_TĘCZOWY_KWIAT));
     testEqual(player.maxMana, 1);
+
+    action("zbierz");
+    action("zjedz grzyb");
+    assertSecretResponse();
+    action("wyrzuć grzyb");
+    test(discoveries.items.includes(ITEM.GRZYB));
 
     action("idź prawo");
     i = 0;
@@ -414,6 +427,61 @@ export function bigGameTest() {
     action("zjedz jagody");
     assertSecretResponse();
 
+    //#region Blueprint Projects
+    //We'll be making BUILDING.TEST ('Testowy pałac z wielu słów'), with a cost of:
+    //[ITEM.MARMUR, ITEM.MARMUR, ITEM.MARMUR, ITEM.JABŁKO, ITEM.SZKŁO, ITEM.NASIONA_JAGODY]
+    action("idź lewo");
+    action("idź lewo");
+    testPlayerPosition(player, 1, 1);
+    testEqual(discoveries.buildings.length, 2);
+    action("projektuj");
+    assertSecretResponse();
+    test(discoveries.commands.includes(ACTION.PROJEKTUJ));
+    action("projektuj dlfghh");
+    assertSecretResponse();
+    action("projektuj drewno");
+    assertSecretResponse();
+    action("projektuj drewno drewno");
+    assertSecretResponse();
+    action("projektuj drewno marmur");
+    assertSecretResponse();
+
+    testEqual(player.items.getRemainingCapacity(), 2);
+    action("zbierz");
+    action("zbierz");
+    action("projektuj marmur marmur");
+    assertSecretResponse();
+    action("wyrzuć marmur");
+
+    test(!player.hasBlueprintProject());
+    test(player.items.hasItem(ITEM.MARMUR));
+    let { respond: firstProjectResponse } = action("projektuj marmur nasiona jagód");
+    test(!player.items.hasItem(ITEM.MARMUR));
+    assertSecretResponse(true);
+    test(player.hasBlueprintProject());
+    action("projektuj");
+    assertSecretResponse();
+    let { respond: secondProjectResponse } = action("projektuj marmur nasiona jagód");
+    assertSecretResponse(true);
+    test(firstProjectResponse !== secondProjectResponse, "Project creation and continuation should give different responses");
+
+    let countCorrect = (response => response.respond.split(':').filter(s => s === "green_square").length);
+    testEqual(countCorrect(action("projektuj marmur nasiona jagód")), 0); //Wrong length
+    testEqual(countCorrect(action("projektuj złoto złoto złoto złoto złoto złoto")), 0); //Correct length, no correct items
+    testEqual(countCorrect(action("projektuj marmur nasiona jagód złoto złoto złoto złoto")), 2);
+    testEqual(countCorrect(action("projektuj marmur nasiona jagód złoto złoto złoto złoto złoto")), 0);
+    testEqual(countCorrect(action("projektuj marmur nasiona jagód marmur złoto złoto złoto")), 3);
+    testEqual(countCorrect(action("projektuj marmur nasiona jagód marmur marmur złoto złoto")), 4);
+    testEqual(countCorrect(action("projektuj marmur nasiona jagód marmur marmur marmur złoto")), 4);
+    testEqual(countCorrect(action("projektuj marmur nasiona jagód marmur marmur marmur marmur")), 4);
+    testEqual(countCorrect(action("projektuj marmur nasiona jagód marmur marmur grzyb marmur")), 5);
+    testEqual(countCorrect(action("projektuj marmur nasiona jagód ruda żelaza marmur marmur grzyb")), 5);
+    //Finishing the blueprint:
+    testEqual(countCorrect(action("projektuj marmur nasiona jagód tęczowy kwiat marmur marmur grzyb")), 6);
+    test(discoveries.buildings.includes(BUILDING.TEST));
+    test(!player.hasBlueprintProject());
+    action("projektuj marmur nasiona jagód tęczowy kwiat marmur marmur grzyb");
+    assertSecretResponse();
 
 
 

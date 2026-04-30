@@ -3,6 +3,7 @@ import { BIOME_DATA } from '../data/biomes.js';
 import { BIOME, ACTION, DIRECTION, STATE } from './enums.js';
 import { capitalize, stringsEqual, printItem, printifyInventory } from './utils.js';
 import { isHeavyItem, getFuelValue } from '../data/items.js';
+import { ActionException } from './parsers.js';
 
 export class Tile {
     constructor(x, y, biome, buildings = []) {
@@ -148,6 +149,8 @@ export class Player {
         this.states = [];
         this.maxMana = 0;
         this.mana = 0;
+
+        this.blueprintProject = null;
     }
 
     makeNameShorthand(fullName) {
@@ -204,6 +207,22 @@ export class Player {
 
     getActionStrength(action) {
         return 1; //This will be expanded to add multipliers to some actions based on states/equipment
+    }
+
+    hasBlueprintProject() {
+        return this.blueprintProject !== null;
+    }
+
+    startBlueprintProject(buildingData) {
+        this.blueprintProject = new BlueprintProject(buildingData);
+    }
+
+    finishBlueprintProject() {
+        this.blueprintProject = null;
+    }
+
+    getBlueprintProject() {
+        return this.blueprintProject;
     }
 }
 
@@ -460,5 +479,47 @@ export class ItemContainer {
     clearAllItems() {
         this.heavyItems = [];
         this.lightItems = [];
+    }
+}
+
+export class BlueprintProject {
+    constructor(buildingData) {
+        this.buildingData = buildingData;
+        this.items = [...buildingData.cost];
+    }
+
+    isSolution(guessItems) {
+        return this.items.length === guessItems.length && this.countCorrect(guessItems) === this.items.length;
+    }
+
+    messageForGuess(guessItems) {
+        const CORRECT = ":green_square:";
+        const WRONG = ":black_large_square:";
+        let guessed = this.countCorrect(guessItems);
+        let needed = this.items.length;
+        if (needed > guessItems.length) return "Ten projekt potrzebuje więcej przedmiotów.";
+        if (needed < guessItems.length) return "Ten projekt potrzebuje mniej przedmiotów.";
+        if (guessed === needed) return ":star: " + this.repeatCharacter(CORRECT, needed) + " :star:";
+        return this.repeatCharacter(CORRECT, guessed) + " " + this.repeatCharacter(WRONG, needed - guessed);
+    }
+
+    countCorrect(guessItems) {
+        let res = 0;
+        let remaining = [...this.items];
+        for (let i = 0; i < guessItems.length; i++) {
+            if (remaining.includes(guessItems[i])) {
+                res++;
+                remaining.splice(remaining.indexOf(guessItems[i]), 1);
+            }
+        }
+        return res;
+    }
+
+    repeatCharacter(c, amount) {
+        return Array.from({ length: amount }, () => c).join(' ');
+    }
+
+    getBuilding() {
+        return this.buildingData;
     }
 }

@@ -293,6 +293,39 @@ export class Game {
             }
             case ACTION.TWÓRZ:
                 return { respond: base + "TODO" };
+            case ACTION.PROJEKTUJ: {
+                if (player.hasBlueprintProject()) { //Continue a project
+                    let { items } = parseItemList(options, bundle);
+                    let project = player.getBlueprintProject();
+                    if (project.isSolution(items)) {
+                        this.checkBuildingDiscovery(project.getBuilding(), player);
+                        player.finishBlueprintProject();
+                    }
+                    return { respond: base + project.messageForGuess(items) };
+
+                } else { //Start a new project
+                    let { items } = parsePlayerItemList(options, bundle);
+                    // let { items } = parseItemList(options, bundle); //TODO - temporary
+                    if (items.length !== 2) throw new ActionException("Wybierz dwa przedmioty");
+                    if (items[0] === items[1]) throw new ActionException("Wybierz dwa różne przedmioty");
+
+                    player.removeItems(items[0]);
+                    player.removeItems(items[1]);
+
+                    let candidates = BUILDING_DATA.
+                        filter(b => this.isBuildingBlueprintable(b)).
+                        filter(b => b.cost.includes(items[0]) && b.cost.includes(items[1]));
+
+                    if (candidates.length === 0) {
+                        return { respond: base + "Po długich eksperymentach stwierdzasz, że najwyraźniej nie jesteś w stanie stworzyć żadnego budynku, którego koszt zawierałby te dwa przedmioty, a poza nimi tylko przedmioty, które już odkryliście." };
+                    }
+
+                    let selected = candidates[Math.floor(Math.random() * candidates.length)];
+                    player.startBlueprintProject(selected);
+
+                    return { respond: base + "Po długich eksperymentach nad tymi przedmiotami wpadasz na zarysł pomysłu, co można by z nich zbudować.\nUżyj tej komendy ponownie, aby kontynuować pracę." };
+                }
+            }
             default:
                 player.remainingActions += cost;
                 return { secret: "Coś poszło nie tak. Jeśli widzisz tą wiadomość, to akcja nie została rozpoznana. Daj znać Maćkowi." };
@@ -378,7 +411,7 @@ export class Game {
         if (!foodValue) throw new ActionException("Ten przedmiot nie jest jadalny.");
 
         let fedBuff = player.stateDuration(STATE.FED);
-        if (foodValue <= fedBuff) throw new ActionException("To jedzenie nie jest w stanie nasycić cię jeszcze bardziej");
+        if (foodValue <= fedBuff) throw new ActionException("To jedzenie nie jest w stanie nasycić cię jeszcze bardziej.");
 
         player.addState(STATE.FED, foodValue);
         return `Zyskujesz status **nasycony** na ${foodValue} ${adjustWordPl(foodValue, "cykl", "cykle", "cykli")}. Zapewnia on dodatkową akcję w każdym cyklu.`;
@@ -401,7 +434,7 @@ export class Game {
     }
 
     checkBuildingDiscovery(buildingData, player) {
-        if (this.discoveries.buildings.includes(buildingData)) return;
+        if (this.discoveries.buildings.includes(buildingData.id)) return;
         this.queuedDiscoveries.push({
             building: buildingData.id,
             id: player.discordId,
@@ -419,12 +452,26 @@ export class Game {
     }
 
     checkRecipeDiscovery(recipe, player) {
-        if (this.discoveries.recipes.some(name => name === recipe.name)) return;
+        if (this.discoveries.recipes.includes(recipe.name)) return;
         this.queuedDiscoveries.push({
             recipe: recipe.name,
             id: player.discordId,
             text: "nowy przepis - " + recipe.name
         });
+    }
+
+    /**
+     * Checks if a building is discoverable via blueprint projects, i.e.
+     * it hasn't already been discovered and all its ingredients are discovered.
+     * @param {Object} building A building data object from BUILDING_DATA
+     * @returns  True iff the building can be discovered this way
+     */
+    isBuildingBlueprintable(building) {
+        if (this.discoveries.buildings.includes(building.id)) return false;
+        for (let i = 0; i < building.cost.length; i++) {
+            if (!this.discoveries.items.includes(building.cost[i])) return false;
+        }
+        return true;
     }
 
 

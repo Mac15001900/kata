@@ -35,6 +35,7 @@ export const ACTION = Object.freeze({
 
     BUDUJ: 40,
     TWÓRZ: 41,
+    PROJEKTUJ: 42,
 });
 
 export const DIRECTION = Object.freeze({

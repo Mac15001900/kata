@@ -28,6 +28,7 @@ export function getCommandFromString(string) {
 
     s[ACTION.BUDUJ] = 'buduj zbuduj';
     s[ACTION.TWÓRZ] = 'twórz stwórz zrób';
+    s[ACTION.PROJEKTUJ] = 'projektuj zaprojektuj projekt';
 
     for (let key in s) {
         if (removePolishCharacters(s[key]).split(' ').includes(testString)) return Number(key);

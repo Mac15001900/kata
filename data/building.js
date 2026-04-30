@@ -21,9 +21,9 @@ export const BUILDING_DATA = [
         canCraft: true,
         fuelPerOperation: 1,
     }, {
-        id: BUILDING.TEST,
+        id: BUILDING.TEST, //Used for testing various things
         name: 'Testowy pałac z wielu słów',
-        cost: [ITEM.MARMUR, ITEM.MARMUR, ITEM.JABŁKO, ITEM.SZKŁO],
+        cost: [ITEM.MARMUR, ITEM.MARMUR, ITEM.MARMUR, ITEM.TĘCZOWY_KWIAT, ITEM.GRZYB, ITEM.NASIONA_JAGODY],
         canBeUsed: true,
     }, {
         id: BUILDING.FARMA,
