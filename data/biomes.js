@@ -69,6 +69,6 @@ BIOME_DATA[BIOME.VIOLET] = {
     mapString: ".T.TT.T.",
     lookDescription: `TODO magiczne świecące grzyby TODO`,
     harvestLoot: [ITEM.GRZYB],
-    searchLoot: [ITEM.CZARNY_KWIAT, ITEM.ŚWIECĄCY_KAMIEŃ],
+    searchLoot: [ITEM.TĘCZOWY_KWIAT, ITEM.ŚWIECĄCY_KAMIEŃ],
     digLoot: [],
 }

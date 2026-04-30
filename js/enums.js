@@ -49,7 +49,7 @@ export const DIRECTION = Object.freeze({
     UP_RIGHT: 9
 });
 
-export const BUFF = Object.freeze({
+export const STATE = Object.freeze({
     NONE: 0,
     RESTED: 1,
     FED: 2,
@@ -87,12 +87,20 @@ export const ITEM = Object.freeze({
     FIOLETOWY_KRYSZTAŁ: "fioletowy kryształ",
     GRUDKA_KOBALTU: "grudka kobaltu",
     JAGODY: "jagody",
-    CZARNY_KWIAT: "czarny kwiat",
+    TĘCZOWY_KWIAT: "tęczowy kwiat",
     ŚWIECĄCY_KAMIEŃ: "świecący kamień",
 
     //Processed
     ŻELAZO: "żelazo",
     DESKA: "deska",
+
+    //Seeds
+    NASIONA_POMARAŃCZA: "pestki pomarańczy",
+    NASIONA_IMBIR: "nasiona imbiru",
+    NASIONA_BIAŁY_KWIAT: "nasiona białego kwiatu",
+    NASIONA_JABŁKO: "pestki jabłka",
+    NASIONA_JAGODY: "nasiona jagód",
+    NASIONA_TĘCZOWY_KWIAT: "nasiona tęczowego kwiatu",
 
 });
 

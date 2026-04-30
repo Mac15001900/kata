@@ -3,10 +3,10 @@ import { Tile, Board, Player } from "./objects.js"
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
 import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, arraysEqual, printifyInventory, parseBuildingAndItems, getCraftingRecipe, printItemList, adjustWordPl } from "./utils.js";
 import fs from 'fs';
-import { BIOME, ACTION, DIRECTION } from './enums.js';
+import { ITEM, BIOME, ACTION, DIRECTION, STATE } from './enums.js';
 import { BIOME_DATA } from "../data/biomes.js";
 import { ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser } from "./parsers.js";
-import { getFuelValue } from "../data/items.js";
+import { getFuelValue, getFoodValue, isHeavyItem, getFoodEatingResult } from "../data/items.js";
 
 export class Game {
     constructor(opts) {
@@ -78,7 +78,7 @@ export class Game {
         let base = `${player.name} używa akcji \`${inputString}\`.\n`;
         let success = "Akcja udaje się.";
         let freeAction = "\n\nᵀᵃ ᵃᵏᶜʲᵃ ʲᵉˢᵗ ᵈᵃʳᵐᵒʷᵃ";
-        player.remainingActions -= cost; //By default we subtract the cost. If an action doesn't proceed it can refund it.
+        player.remainingActions -= cost;
 
         let currentTile = this.board.get(player.x, player.y);
         let currentBiome = currentTile.biome;
@@ -88,7 +88,7 @@ export class Game {
             case ACTION.NONE:
                 return { respond: base + "Niestety okazuje się, że ta akcja nic nie robi." };
 
-            //---------- Basic actions ----------
+            //#region -------------- Basic actions --------------
             case ACTION.UŻYJ: {
                 if (!options[0]) throw new ActionException("Wybierz przedmiot lub budynek.");
 
@@ -107,7 +107,11 @@ export class Game {
                         if (!recipe) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić." };
                         if (!building.hasEnoughFuel()) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić.\nChociaż masz wrażenie, że mogłoby to się udać przy większej temperaturze. Możesz trzeba tu najpierw dorzucić paliwa?" };
 
-                        if (!player.items.canFitItemList(recipe.output))
+                        //Calculate if we'll have space for the output after removing the input
+                        let currentSpace = player.items.getRemainingCapacity();
+                        let spaceAfterRemovingInput = currentSpace + recipe.input.filter(isHeavyItem).length;
+                        let spaceAfterAddingOutput = spaceAfterRemovingInput - recipe.output.filter(isHeavyItem).length;
+                        if (spaceAfterAddingOutput < 0)
                             throw new ActionException(`Nie masz miejsca na ${recipe.output.length === 1 ? "przedmiot, który" : "przedmioty, które"} próbujesz stworzyć.`);
 
                         player.items.removeItemList(recipe.input);
@@ -124,8 +128,17 @@ export class Game {
 
                 return { respond: base + "TODO" };
             }
-            case ACTION.ZJEDZ:
-                return { respond: base + "TODO" };
+            case ACTION.ZJEDZ: {
+                let { item } = parsePlayerSingleItem(options, bundle);
+                let message = this.eatItem(item, player);
+                player.removeItems(item);
+                let seeds = getFoodEatingResult(item);
+                if (seeds) {
+                    player.addItem(getFoodEatingResult(item));
+                    message += `\nZyskujesz ${printItem(seeds)}.`;
+                }
+                return { secret: message + freeAction };
+            }
             case ACTION.POMÓŻ:
                 return { respond: base + "TODO" };
             case ACTION.PRACUJ: {
@@ -140,7 +153,7 @@ export class Game {
                 else return { respond: base + `Praca: ${construction.workDone}/${construction.requiredWork}` };
             }
 
-            //---------- Gathering actions ----------
+            //#region -------------- Gathering actions --------------
             case ACTION.SZUKAJ:
                 const lightLootPool = BIOME_DATA[currentBiome].searchLoot;
                 //TODO - check for appropriate tools to potentially apply bonuses
@@ -159,7 +172,7 @@ export class Game {
             case ACTION.KOP:
                 return { respond: base + "TODO" };
 
-            //---------- Inventory actions ----------
+            //#region -------------- Inventory actions --------------
             case ACTION.EKWIPUNEK:
                 return { secret: player.printEquipment() + freeAction };
             case ACTION.WEŹ: {
@@ -216,7 +229,7 @@ export class Game {
 
 
 
-            //---------- Movement actions ----------
+            //#region -------------- Movement actions --------------
             case ACTION.IDŹ: {
                 let { direction } = parseDirection(options);
                 let newPos = moveCoordinates(direction, player.x, player.y);
@@ -234,7 +247,7 @@ export class Game {
             case ACTION.TELEPORTUJ:
                 return { respond: base + "TODO" };
 
-            //---------- Creation actions ----------
+            //#region -------------- Creation actions --------------
             case ACTION.BUDUJ: {
                 if (!options[0]) throw new ActionException("Wybierz, jakich materiałów chcesz użyć.");
                 let { items } = parseItemList(options, bundle);
@@ -295,6 +308,14 @@ export class Game {
         return this.players.find(p => p.discordId === id);
     }
 
+    /**
+     * 
+     * @returns {[Player]}
+     */
+    getAllPlayers() {
+        return this.players;
+    }
+
     makeRandomTile(x, y) {
         let biome = this.pickWeighted(this.config.biomeWeights);
         return new Tile(x, y, biome);
@@ -314,20 +335,25 @@ export class Game {
         console.error("Logical error in pickWeighted");
     }
 
-    /**
-     * 
-     * @returns {[Player]}
-     */
-    getAllPlayers() {
-        return this.players;
+    eatItem(item, player) {
+        if (item === ITEM.IMBIR) throw new ActionException("Imbir jest świetną przyprawą, ale nie jesteś w stanie zjeść go samego.");
+        if (item === ITEM.MIÓD) throw new ActionException("Tutejszy miód zdaje się być jeszcze słodszy niż ten z twojej rzeczywistości. Nie jesteś w stanie zjeść go samego.");
+        if (item === ITEM.GRZYB) throw new ActionException("O ile zdecydowanie wygląda jak grzyb, w przeciwieństwie do zwykłych grzybów zupełnie nie da się go zjeść.");
+        if (item === ITEM.TĘCZOWY_KWIAT) {
+            player.maxMana++;
+            return "O ile ten kwiat nie jest szczególnie sycący, przepełnia cię zupełnie innego rodzaju energią.\nTwoja maksymalna mana zwiększa się o 1.";
+        }
+
+        let foodValue = getFoodValue(item);
+        if (!foodValue) throw new ActionException("Ten przedmiot nie jest jadalny.");
+
+        let fedBuff = player.stateDuration(STATE.FED);
+        if (foodValue <= fedBuff) throw new ActionException("To jedzenie nie jest w stanie nasycić cię jeszcze bardziej");
+
+        player.addState(STATE.FED, foodValue);
+        return `Zyskujesz status **nasycony** na ${foodValue} ${adjustWordPl(foodValue, "cykl", "cykle", "cykli")}. Zapewnia on dodatkową akcję w każdym cyklu.`;
     }
 
-    handleProblemsWithBuildingSelection(tile, buildingId, number) {
-        if (!buildingId || !tile.hasBuilding(buildingId)) return { error: "Nie ma tutaj takiego budynku." };
-        if (tile.hasMultipleBuildings(buildingId) && !number) return { error: "Jest tu wiele budynków tego rodzaju. Sprecyzuj numer." };
-        let res = tile.getBuilding(buildingId, number);
-        if (!res) return { error: `Nie ma tutaj takiego budynku o numerze ${number}.` };
-        return { building: res }
-    }
+
 
 }

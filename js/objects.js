@@ -1,6 +1,6 @@
 import { getRandomLetters } from './utils.js';
 import { BIOME_DATA } from '../data/biomes.js';
-import { BIOME, ACTION, DIRECTION, BUFF } from './enums.js';
+import { BIOME, ACTION, DIRECTION, STATE } from './enums.js';
 import { capitalize, stringsEqual, printItem, printifyInventory } from './utils.js';
 import { isHeavyItem, getFuelValue } from '../data/items.js';
 
@@ -146,6 +146,8 @@ export class Player {
 
         this.items = new ItemContainer(2);
         this.states = [];
+        this.maxMana = 0;
+        this.mana = 0;
     }
 
     makeNameShorthand(fullName) {
@@ -196,7 +198,7 @@ export class Player {
     }
 
     updateMaxActions() {
-        let extraActions = [BUFF.RESTED, BUFF.FED].filter(b => this.hasState(b)).length;
+        let extraActions = [STATE.RESTED, STATE.FED].filter(b => this.hasState(b)).length;
         this.maxActions = 1 + extraActions;
     }
 

@@ -36,7 +36,7 @@ export function getCommandFromString(string) {
 }
 
 export function getActionCost(action) {
-    if ([ACTION.EKWIPUNEK, ACTION.WYRZUĆ, ACTION.DODAJ, ACTION.WEŹ, ACTION.ZOSTAW].includes(action)) return 0;
+    if ([ACTION.EKWIPUNEK, ACTION.WYRZUĆ, ACTION.DODAJ, ACTION.WEŹ, ACTION.ZOSTAW, ACTION.ZJEDZ, ACTION.DORZUĆ].includes(action)) return 0;
     return 1;
 }
 

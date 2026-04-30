@@ -1,5 +1,5 @@
 import { Game } from "./game.js";
-import { ITEM, BUILDING } from "./enums.js";
+import { ITEM, BUILDING, STATE } from "./enums.js";
 
 
 let testsPassed = 0;
@@ -77,7 +77,7 @@ export function bigGameTest() {
     testEqual(player.items.lightItems.length, 1, "Player finding an item");
     action("szukaj");
     testEqual(player.items.lightItems.length, 2, "Player finding an item");
-    test(player.hasItem(ITEM.CZARNY_KWIAT) || player.hasItem(ITEM.ŚWIECĄCY_KAMIEŃ), "Wrong item collected in purple");
+    test(player.hasItem(ITEM.TĘCZOWY_KWIAT) || player.hasItem(ITEM.ŚWIECĄCY_KAMIEŃ), "Wrong item collected in purple");
     action("idź góra");
     action("szukaj");
     test(player.hasItem(ITEM.LIŚĆ) || player.hasItem(ITEM.SADZONKA) || player.hasItem(ITEM.ŻYWICA), "Wrong item collected in red");
@@ -348,6 +348,57 @@ export function bigGameTest() {
     testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 0);
     testEqual(player.items.getItemAmount(ITEM.ŻELAZO), 1);
     testEqual(furnace.operationsAvailable(), 0);
+
+
+    //#region Eating
+    action("zjedz tęczowy kwiat");
+    assertSecretResponse();
+    action("zjedz jagody");
+    assertSecretResponse();
+    action("zjedz");
+    assertSecretResponse();
+    action("zjedz kjsfghdfg");
+    assertSecretResponse();
+
+    action("idź prawo");
+    let i = 0;
+    while (!player.items.hasItem(ITEM.TĘCZOWY_KWIAT)) {
+        action("szukaj");
+        i++;
+        if (i > 1000) throw "No rainbow flower found";
+    }
+    test(player.items.hasItem(ITEM.TĘCZOWY_KWIAT));
+    testEqual(player.maxMana, 0);
+    action("zjedz tęczowy kwiat");
+    test(!player.items.hasItem(ITEM.TĘCZOWY_KWIAT));
+    test(player.items.hasItem(ITEM.NASIONA_TĘCZOWY_KWIAT));
+    testEqual(player.maxMana, 1);
+
+    action("idź prawo");
+    i = 0;
+    while (!player.items.hasItem(ITEM.JAGODY)) {
+        action("szukaj");
+        i++;
+        if (i > 1000) throw "No blueberries found";
+    }
+    test(player.items.hasItem(ITEM.JAGODY));
+    test(!player.hasState(STATE.FED));
+    action("zjedz jagody");
+    test(!player.items.hasItem(ITEM.JAGODY));
+    test(player.items.hasItem(ITEM.NASIONA_JAGODY));
+    test(player.hasState(STATE.FED));
+    testEqual(player.maxMana, 1);
+
+    action("zjedz tęczowy kwiat");
+    assertSecretResponse();
+    action("zjedz jagody");
+    assertSecretResponse();
+
+
+
+
+
+
 
     console.log(`Ran ${testsRan} tests, ${testsPassed} passed.`);
     return testsRan === testsPassed;
