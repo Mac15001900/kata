@@ -28,6 +28,13 @@ export class Game {
         // this.board = this.generateBoard(config.mapWidth, config.mapHeight);
         this.board = this.buildBoardFromFile(config.mapFile);
         this.players = [];
+        this.discoveries = {
+            items: [],
+            commands: [],
+            buildings: [],
+            recipes: [],
+        }
+        this.queuedDiscoveries = [];
     }
 
     /**
@@ -45,9 +52,21 @@ export class Game {
         } catch (e) {
             if (e instanceof ActionException) {
                 player.usedActions = playerActions; //Reset any used up action points
-                return { secret: ":cross_mark: " + e.message };
+                res = { secret: ":cross_mark: " + e.message };
             } else throw e
         }
+
+        if (this.queuedDiscoveries.some(d => d.id === userId)) {
+            let discoveries = this.queuedDiscoveries.filter(d => d.id === userId);
+            if (discoveries.length > 1) {
+                res.discovery = "odkrywa:\n" + discoveries.map(d => capitalize(d.text)).join("\n");
+            } else {
+                res.discovery = `odkrywa ${discoveries[0].text}!`;
+            }
+            discoveries.forEach(d => this.addDiscovery(d));
+            this.queuedDiscoveries = this.queuedDiscoveries.filter(d => d.id !== userId);
+        }
+
         return res;
     }
 
@@ -84,6 +103,10 @@ export class Game {
         let currentBiome = currentTile.biome;
         let bundle = new ParserHelperBundle(this, currentTile, player);
 
+        if (command !== ACTION.NONE) {
+            this.checkCommandDiscovery(command, player, inputString.split(" ")[0]);
+        }
+
         switch (command) {
             case ACTION.NONE:
                 return { respond: base + "Niestety okazuje się, że ta akcja nic nie robi." };
@@ -105,6 +128,7 @@ export class Game {
 
                         //This is intentionally *not* throwing the exception; experimenting with ingredients is meant to use up an action
                         if (!recipe) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić." };
+                        this.checkRecipeDiscovery(recipe, player);
                         if (!building.hasEnoughFuel()) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić.\nChociaż masz wrażenie, że mogłoby to się udać przy większej temperaturze. Możesz trzeba tu najpierw dorzucić paliwa?" };
 
                         //Calculate if we'll have space for the output after removing the input
@@ -116,6 +140,7 @@ export class Game {
 
                         player.items.removeItemList(recipe.input);
                         player.items.addItemList(recipe.output);
+                        recipe.output.forEach(item => this.checkItemDiscovery(item, player));
                         building.runOneCraft();
 
                         return { respond: base + `Tworzysz:\n${printItemList(recipe.output)}.` };
@@ -134,7 +159,8 @@ export class Game {
                 player.removeItems(item);
                 let seeds = getFoodEatingResult(item);
                 if (seeds) {
-                    player.addItem(getFoodEatingResult(item));
+                    player.addItem(seeds);
+                    this.checkItemDiscovery(seeds, player);
                     message += `\nZyskujesz ${printItem(seeds)}.`;
                 }
                 return { secret: message + freeAction };
@@ -159,6 +185,7 @@ export class Game {
                 //TODO - check for appropriate tools to potentially apply bonuses
                 let newItem2 = lightLootPool[Math.floor(Math.random() * lightLootPool.length)];
                 player.addItem(newItem2);
+                this.checkItemDiscovery(newItem2, player);
                 return { respond: base + "Znajdujesz 1x " + capitalize(newItem2) };
             case ACTION.ZBIERAJ:
                 if (player.availableCapacity() <= 0) {
@@ -167,6 +194,7 @@ export class Game {
                 const heavyLootPool = BIOME_DATA[currentBiome].harvestLoot;
                 //TODO - check for appropriate tools to potentially apply bonuses
                 let newItem = heavyLootPool[Math.floor(Math.random() * heavyLootPool.length)];
+                this.checkItemDiscovery(newItem, player);
                 player.addItem(newItem);
                 return { respond: base + `Zdobywasz 1x ${capitalize(newItem)}.` };
             case ACTION.KOP:
@@ -182,6 +210,7 @@ export class Game {
 
                 currentTile.items.removeItem(item);
                 player.addItem(item);
+                this.checkItemDiscovery(item, player);
                 return { secret: `Zabierasz ${options.join(' ')}.` + freeAction };
             }
             case ACTION.WYRZUĆ: {
@@ -256,6 +285,7 @@ export class Game {
                     if (arraysEqual(BUILDING_DATA[i].cost, items)) {
                         if (currentTile.getConstruction(BUILDING_DATA[i].id)) throw new ActionException("Tu już powstaje taki budynek.");
                         currentTile.startConstruction(BUILDING_DATA[i]);
+                        this.checkBuildingDiscovery(BUILDING_DATA[i], player);
                         return { respond: base + `Zaczynasz budować ${BUILDING_DATA[i].name}.` };
                     }
                 }
@@ -352,6 +382,49 @@ export class Game {
 
         player.addState(STATE.FED, foodValue);
         return `Zyskujesz status **nasycony** na ${foodValue} ${adjustWordPl(foodValue, "cykl", "cykle", "cykli")}. Zapewnia on dodatkową akcję w każdym cyklu.`;
+    }
+
+    addDiscovery(discovery) {
+        if (discovery.item) this.discoveries.items.push(discovery.item);
+        if (discovery.command) this.discoveries.commands.push(discovery.command);
+        if (discovery.building) this.discoveries.buildings.push(discovery.building);
+        if (discovery.recipe) this.discoveries.recipes.push(discovery.recipe);
+    }
+
+    checkItemDiscovery(item, player) {
+        if (this.discoveries.items.includes(item)) return;
+        this.queuedDiscoveries.push({
+            item: item,
+            id: player.discordId,
+            text: "nowy przedmiot - " + printItem(item)
+        });
+    }
+
+    checkBuildingDiscovery(buildingData, player) {
+        if (this.discoveries.buildings.includes(buildingData)) return;
+        this.queuedDiscoveries.push({
+            building: buildingData.id,
+            id: player.discordId,
+            text: "nowy budynek - " + buildingData.name
+        });
+    }
+
+    checkCommandDiscovery(command, player, commandText) {
+        if (this.discoveries.commands.includes(command)) return;
+        this.queuedDiscoveries.push({
+            command: command,
+            id: player.discordId,
+            text: "nową akcję - " + capitalize(commandText)
+        });
+    }
+
+    checkRecipeDiscovery(recipe, player) {
+        if (this.discoveries.recipes.some(name => name === recipe.name)) return;
+        this.queuedDiscoveries.push({
+            recipe: recipe.name,
+            id: player.discordId,
+            text: "nowy przepis - " + recipe.name
+        });
     }
 
 

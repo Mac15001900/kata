@@ -46,6 +46,7 @@ const DEBUG = {
     updateMapOnAction: true,
     runTestsOnStart: true,
     ignoreBuildingCosts: false,
+    hideDisoveryMessages: false,
 }
 global.debug = DEBUG;
 
@@ -128,8 +129,9 @@ global.imageTest = function () {
  */
 app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async function (req, res) {
     // Interaction id, type and data
-    const { id, type, data, channel_id, guild_id, member } = req.body;
-    console.log(req.body);
+    const { id: message_id, type, data, channel_id, guild_id, member } = req.body;
+    const playerId = member.user.id;
+    // console.log(req.body);
 
     /**
      * Handle verification requests
@@ -180,8 +182,16 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
             let actionString = data.options[0].value;
             console.log("Action used: " + actionString);
 
-            let result = game.processAction(actionString, member.user.id);
+            let result = game.processAction(actionString, playerId);
             if (DEBUG.updateMapOnAction) updateMapFile();
+            if (result.discovery && !DEBUG.hideDisoveryMessages) {
+                erisBot.createMessage(channel_id, {
+                    content: `:star: <@${playerId}> ` + result.discovery,
+                    allowedMentions: {
+                        users: [playerId]
+                    }
+                });
+            }
             if (result.respond && result.secret) {
                 erisBot.createMessage(channel_id, result.respond);
                 return secretRespond(result.secret);
@@ -230,6 +240,14 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                     teleportingPlayer.x = parseInt(options[0]);
                     teleportingPlayer.y = parseInt(options[1]);
                     return secretRespond(`Teleporting ${teleportingPlayer.name} to ${teleportingPlayer.x}, ${teleportingPlayer.y}`);
+                case 'mention':
+                    erisBot.createMessage(channel_id, {
+                        content: `Hello, <@${member.user.id}>!`,
+                        allowedMentions: {
+                            users: [member.user.id]
+                        }
+                    });
+                    return null;
                 case 'spawnHouse':
                     let spawnTile = game.board.get(game.getPlayerById(member.user.id).x, game.getPlayerById(member.user.id).y);
                     if (options[0] && options[1]) spawnTile = game.board.get(parseInt(options[0]), parseInt(options[1]));

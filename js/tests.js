@@ -1,5 +1,5 @@
 import { Game } from "./game.js";
-import { ITEM, BUILDING, STATE } from "./enums.js";
+import { ITEM, BUILDING, STATE, ACTION } from "./enums.js";
 
 
 let testsPassed = 0;
@@ -49,6 +49,7 @@ export function bigGameTest() {
     //#region Basic tests
     //Game and player creation
     game = new Game();
+    let discoveries = game.discoveries;
     test(game != null, "Game created");
     game.addDiscordMemberAsPlayer({ id: "1", nick: "AB CD" }, 0, 0);
     test(game.players.length === 1, "Player added");
@@ -56,10 +57,16 @@ export function bigGameTest() {
     test(player.name === "U-ABCD", "Player's name is incorrect'");
     test(player.discordId === "1", "Player's id is incorrect");
 
+    testEqual(discoveries.items.length, 0);
+    testEqual(discoveries.commands.length, 0);
+    testEqual(discoveries.buildings.length, 0);
+    testEqual(discoveries.recipes.length, 0);
+
     //Basic movement
     testPlayerPosition(player, 0, 0);
     action("idź góra");
     testPlayerPosition(player, 0, 1);
+    test(discoveries.commands.includes(ACTION.IDŹ));
     action("idź dół");
     testPlayerPosition(player, 0, 0);
     action("idź prawo");
@@ -75,20 +82,25 @@ export function bigGameTest() {
     //Light-item collection
     action("szukaj");
     testEqual(player.items.lightItems.length, 1, "Player finding an item");
+    testEqual(discoveries.items.length, 1, "First item discovery");
+    test(discoveries.commands.includes(ACTION.SZUKAJ));
     action("szukaj");
     testEqual(player.items.lightItems.length, 2, "Player finding an item");
     test(player.hasItem(ITEM.TĘCZOWY_KWIAT) || player.hasItem(ITEM.ŚWIECĄCY_KAMIEŃ), "Wrong item collected in purple");
+    test(discoveries.items.includes(ITEM.TĘCZOWY_KWIAT) || discoveries.items.includes(ITEM.ŚWIECĄCY_KAMIEŃ));
     action("idź góra");
     action("szukaj");
     test(player.hasItem(ITEM.LIŚĆ) || player.hasItem(ITEM.SADZONKA) || player.hasItem(ITEM.ŻYWICA), "Wrong item collected in red");
     testEqual(player.items.lightItems.length, 3, "Player finding an item");
     testEqual(player.items.getItemAmount(), 3, "Player finding an item");
+    test(discoveries.items.length >= 2);
     player.items.clearAllItems(); //We need to do this not to mess up further tests
     testEqual(player.items.getItemAmount(), 0, "Clearing items");
 
     //Heavy item collection and throwing things away
     action("zbierz");
     test(player.hasItem(ITEM.DREWNO), "Wood not collected");
+    test(discoveries.items.includes(ITEM.DREWNO), "Wood not discovered");
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 1, "Wood not collected");
     action("zbierz");
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 2, "Wood not collected");
@@ -97,6 +109,7 @@ export function bigGameTest() {
     action("idź prawo");
     action("zbierz");
     testEqual(player.items.getItemAmount(ITEM.MARMUR), 1, "Marble not collected");
+    test(discoveries.items.includes(ITEM.MARMUR), "Marble not discovered");
     action("zbierz");
     testEqual(player.items.getItemAmount(ITEM.MARMUR), 1, "Items beyond max capacity collected");
     action("wyrzuć drewno");
@@ -128,6 +141,7 @@ export function bigGameTest() {
     action("buduj Marmur Marmur Drewno Drewno");
     testEqual(cityTile.construction.length, 1, "Construction not started");
     testEqual(cityTile.buildings.length, 0, "Building created prematurely");
+    test(discoveries.buildings.includes(BUILDING.DOM), "House not discovered");
     let constructionSite = cityTile.construction[0];
     test(constructionSite.needsItem(ITEM.DREWNO));
     test(constructionSite.needsItem(ITEM.MARMUR));
@@ -286,6 +300,7 @@ export function bigGameTest() {
     testEqual(cityTile.construction.length, 0, "Weird construction from nowhere");
     action("buduj marmur marmur");
     testEqual(cityTile.construction.length, 1, "Construction failed to start");
+    test(discoveries.buildings.includes(BUILDING.PIEC), "Furnace not discovered");
     action("dodaj piec marmur");
     action("dodaj piec marmur");
     action("pracuj piec");
@@ -348,14 +363,17 @@ export function bigGameTest() {
     testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 0);
     testEqual(player.items.getItemAmount(ITEM.ŻELAZO), 1);
     testEqual(furnace.operationsAvailable(), 0);
+    test(discoveries.items.includes(ITEM.ŻELAZO));
+    test(discoveries.recipes.includes("Przetapianie rudy żelaza"));
 
 
     //#region Eating
+    action("zjedz");
+    assertSecretResponse();
+    test(discoveries.commands.includes(ACTION.ZJEDZ));
     action("zjedz tęczowy kwiat");
     assertSecretResponse();
     action("zjedz jagody");
-    assertSecretResponse();
-    action("zjedz");
     assertSecretResponse();
     action("zjedz kjsfghdfg");
     assertSecretResponse();
@@ -382,10 +400,12 @@ export function bigGameTest() {
         if (i > 1000) throw "No blueberries found";
     }
     test(player.items.hasItem(ITEM.JAGODY));
+    test(discoveries.items.includes(ITEM.JAGODY));
     test(!player.hasState(STATE.FED));
     action("zjedz jagody");
     test(!player.items.hasItem(ITEM.JAGODY));
     test(player.items.hasItem(ITEM.NASIONA_JAGODY));
+    test(discoveries.items.includes(ITEM.NASIONA_JAGODY));
     test(player.hasState(STATE.FED));
     testEqual(player.maxMana, 1);
 
@@ -398,9 +418,8 @@ export function bigGameTest() {
 
 
 
-
-
     console.log(`Ran ${testsRan} tests, ${testsPassed} passed.`);
+    if (testsRan !== testsPassed) console.log(`!!!! ${testsRan - testsPassed} tests failed !!!!`);
     return testsRan === testsPassed;
 
 }
