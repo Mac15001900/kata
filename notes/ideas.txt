@@ -14,3 +14,44 @@ Big stone pyramid-ish thing that holds clues
 Magical ball that knows a spell. You can give a it word, and it will tell you which letters are correct, wordle style.
 
 Word set for the conlang: https://sona.pona.la/wiki/tuki_tiki
+
+Forge:
+Different actions affect a "forge value" of an ingot. A specific value will result in a tool.
+A set amount of forge actions can be performed at once (using up 1 normal action and forge fuel), 
+each affecting the forge value in a different way.
+
+Each ingot starts at a different (small) value, to make each forging a unique puzzle?
+
+Potential actions:
+hit — uderzyć / pobić
+punch — przebić / wykłuć (oraz wykłuwać przy formowaniu)
+bend — zgiąć / wyginać
+draw — wyciągać (rozciągać metal) / przeciągać
+upset — zagęścić / skompresować (górną część; stłoczyć)
+shrink — skurczyć / zmniejszyć objętość
+
+ChatGPT suggestions for moar actions:
+forge / smith — kuć / kowalować
+heat / anneal — podgrzać / wyżarzać
+quench — hartować / schłodzić gwałtownie
+temper — odpuszczać / odpuszczenie (wyżarzanie hartowanego)
+grind — szlifować / ostrzyć
+polish — polerować / gładzić
+file — piłować / opiłowywać
+punch/step-drill (hole-making variants) — stemplować / przebić otwór
+drift / ream — rozwiercać / rozwiercić (wyciągać otwór)
+forge-weld / weld — zespawać / złączyć kuźniczo
+peen / ball-peen — kłucie młotkiem / gipcić (kulistym młotem)
+stake / set-down — stukać na kołek / uklepywać
+notch / cut — naciąć / ciąć
+split — rozłupać / rozdzielić
+rivet — nitować / przynitować
+bend-back / straightening — prostować / odgiąć do kształtu
+punch-and-drift (shape hole) — wykłuwać i rozwiercać / formować otwór
+taper — stożkować / zwężać
+flare — rozwiercać końcówkę / rozkucić
+stake-hardening / work-harden — umocnić przez wykuwanie / utwardzać obróbką
+carve / chisel — rzeźbić / dłutować
+emboss / stamp — wytłaczać / odciskać wzór
+temper-bend / spring-back control — kontrolowane odginanie / kompensować sprężystość
+measure / gauge — mierzyć / mierzyć (kontrolować wymiary)

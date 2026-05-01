@@ -1,4 +1,4 @@
-import { ITEM, BUILDING, DIRECTION } from "./enums.js";
+import { ITEM, BUILDING, DIRECTION, FORGE_ACTION, ACTION } from "./enums.js";
 import { getDirectionFromString } from "./data.js";
 import { stringsEqual } from "./utils.js";
 import { BUILDING_DATA } from "../data/building.js";
@@ -59,6 +59,9 @@ export function parsePlayerSingleItem(strings, bundle) {
     else throw new ActionException("Nie posiadasz takiego przedmiotu.");
 }
 
+function itemFromString(string) {
+    return ITEM[Object.keys(ITEM).find(key => stringsEqual(ITEM[key], string))];
+}
 export function parseDirection(strings) {
     if (strings.length === 0) throw new ActionException("Wybierz kierunek.");
     let direction = getDirectionFromString(strings[0]);
@@ -66,13 +69,53 @@ export function parseDirection(strings) {
     return { direction, strings: strings.slice(1) };
 }
 
-function itemFromString(string) {
-    return ITEM[Object.keys(ITEM).find(key => stringsEqual(ITEM[key], string))];
+export function parseNumber(strings) {
+    if (strings.length === 0) throw new ActionException("Wybierz liczbę.");
+    let num = parseInt(strings[0]);
+    if (isNaN(num)) throw new ActionException(strings[0] + " nie jest liczbą.");
+    return { number: num, strings: strings.slice(1) };
+}
+
+export function parseForgeActions(strings) {
+    if (strings.length === 0) throw new ActionException("Wybierz czynności kowalskie do wykonania.");
+    let res = [];
+    let i = 0;
+    while (i < strings.length) {
+        let nextAction = forgeActionFromString(strings[i]);
+        if (!nextAction) {
+            nextAction = forgeActionFromString(strings[i] + " " + strings[i + 1]);
+            i++;
+            if (!nextAction) throw new ActionException("Ta lista zawiera nieprawidłowe czynności kowalskie.");
+        }
+        res.push(nextAction);
+        i++;
+    }
+    return { forgeActions: res, strings: [] };
+}
+
+function forgeActionFromString(string) {
+    return FORGE_ACTION[Object.keys(FORGE_ACTION).find(key => stringsEqual(FORGE_ACTION[key], string))];
 }
 
 /**
+ * Parses a single command. Does *not* throw an error when the command is invalid, returning ACTION.NONE instead.
+ * Usually consumes one word, but will always consume two if the second one is "się"
+ * @param {String[]} strings Player's input, as an array of words
+ * @returns {{command: Number, strings: String[]}} The command and unconsumed input
+ */
+export function parseCommand(strings) {
+    if (strings.length === 0) throw new ActionException("Wybierz czynność.");
+    let command = ACTION[Object.keys(ACTION).find(key => stringsEqual(ACTION[key], strings[0]))];
+    if (!command) command = ACTION.NONE;
+    let sliceIndex = 1;
+    if (stringsEqual(strings[1], "się")) sliceIndex++;
+    return { command, strings: strings.slice(sliceIndex) };
+}
+
+
+/**
  * Parses the name of a building on a specific tile
- * @param {String[]} strings2 Player's input, as an array of words
+ * @param {String[]} strings Player's input, as an array of words
  * @param {ParserHelperBundle} bundle 
  * @returns {{building: Building, strings: String[]}} The Building object and unconsumed input
  */

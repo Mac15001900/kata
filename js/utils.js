@@ -207,3 +207,21 @@ function useGenitive(amount) {
     if ([2, 3, 4].includes(amount % 10)) return false;
     return true;
 }
+
+export const ExtraMath = {
+    sumOfDigits: function (number) {
+        return Math.floor(number).toString().split('').map(digit => parseInt(digit)).reduce((acc, digit) => acc + digit, 0);
+    },
+    modulo: function (a, b) {
+        return (a % b + b) % b;
+    },
+    greatestDivisor: function (number) {
+        let lowerDivisor = 2;
+        let limit = Math.ceil(Math.sqrt(number));
+        while (number % lowerDivisor !== 0) {
+            lowerDivisor++;
+            if (lowerDivisor > limit) return 1;
+        }
+        return number / lowerDivisor;
+    }
+}

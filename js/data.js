@@ -15,7 +15,7 @@ export function getCommandFromString(string) {
 
     s[ACTION.EKWIPUNEK] = 'ekwipunek eq e przedmioty';
     s[ACTION.WEŹ] = 'weź podnieś zabierz';
-    s[ACTION.WYRZUĆ] = 'wyrzuć porzuć odrzuć pozbądź';
+    s[ACTION.WYRZUĆ] = 'q wyrzuć porzuć odrzuć pozbądź';
     s[ACTION.DODAJ] = 'dodaj połóż dołóż';
     s[ACTION.ZJEDZ] = 'zjedz jedz spożyj';
     s[ACTION.ZOSTAW] = 'zostaw odłóż zmagazynuj magazynuj przechowaj włóż';
@@ -29,6 +29,7 @@ export function getCommandFromString(string) {
     s[ACTION.BUDUJ] = 'buduj zbuduj';
     s[ACTION.TWÓRZ] = 'twórz stwórz zrób';
     s[ACTION.PROJEKTUJ] = 'projektuj zaprojektuj projekt';
+    s[ACTION.KUJ] = 'kuj wykuj';
 
     for (let key in s) {
         if (removePolishCharacters(s[key]).split(' ').includes(testString)) return Number(key);

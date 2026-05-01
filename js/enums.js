@@ -36,6 +36,7 @@ export const ACTION = Object.freeze({
     BUDUJ: 40,
     TWÓRZ: 41,
     PROJEKTUJ: 42,
+    KUJ: 43,
 });
 
 export const DIRECTION = Object.freeze({
@@ -111,5 +112,21 @@ export const BUILDING = Object.freeze({
     MAGAZYN: 2,
     PIEC: 3,
     FARMA: 4,
+    WARSZTAT: 5,
+    KUŹNIA: 6,
     TEST: 42,
+});
+
+export const FORGE_ACTION = Object.freeze({
+    NONE: 0,
+    UDERZ_SŁABO: "uderz słabo",
+    UDERZ_ŚREDNIO: "uderz średnio",
+    UDERZ_MOCNO: "uderz mocno",
+    ROZCIĄGNIJ: "rozciągnij",
+    WYGNIJ: "wygnij",
+    ZAGĘŚĆ: "zagęść",
+    SKURCZ: "skurcz",
+    ZWĘŹ: "zwęź",
+    WYKŁUJ: "wykłuj",
+    UKLEP: "uklep",
 });

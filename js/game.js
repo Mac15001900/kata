@@ -83,7 +83,7 @@ export class Game {
 
         let command = getCommandFromString(inputString.split(" ")[0]);
         console.assert(command !== undefined, "Command not recognized: " + inputString.split(" ")[0]);
-        let options = inputString.split(" ").slice(1);
+        let options = inputString.split(" ").slice(1).filter(s => s.length > 0);
         if (options[0] === "się") options.splice(1);
         let cost = getActionCost(command);
 
@@ -326,6 +326,9 @@ export class Game {
                     return { respond: base + "Po długich eksperymentach nad tymi przedmiotami wpadasz na zarysł pomysłu, co można by z nich zbudować.\nUżyj tej komendy ponownie, aby kontynuować pracę." };
                 }
             }
+            case ACTION.KUJ: {
+
+            }
             default:
                 player.remainingActions += cost;
                 return { secret: "Coś poszło nie tak. Jeśli widzisz tą wiadomość, to akcja nie została rozpoznana. Daj znać Maćkowi." };
@@ -334,6 +337,7 @@ export class Game {
 
     }
 
+    //#region -------------- Other functions --------------
     generateBoard(width, height) {
         let tiles = Array.from({ length: height }, (_, r) =>
             Array.from({ length: width }, (_, c) => this.makeRandomTile(c, r)));

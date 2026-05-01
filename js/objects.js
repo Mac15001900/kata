@@ -1,10 +1,12 @@
+import { Forge } from './forge.js';
 import { getRandomLetters } from './utils.js';
 import { BIOME_DATA } from '../data/biomes.js';
-import { BIOME, ACTION, DIRECTION, STATE } from './enums.js';
+import { BIOME, ACTION, DIRECTION, STATE, BUILDING } from './enums.js';
 import { capitalize, stringsEqual, printItem, printifyInventory } from './utils.js';
 import { isHeavyItem, getFuelValue } from '../data/items.js';
 import { ActionException } from './parsers.js';
 
+//#region Tile
 export class Tile {
     constructor(x, y, biome, buildings = []) {
         this.x = x;
@@ -75,7 +77,9 @@ export class Tile {
         if (finishedBuildings.length === 0) return;
 
         for (let i = 0; i < finishedBuildings.length; i++) {
-            let newBuilding = new Building(finishedBuildings[i].buildingData);
+            let newBuilding = null;
+            if (finishedBuildings[i].buildingData.id === BUILDING.KUŹNIA) newBuilding = new Forge();
+            else newBuilding = new Building(finishedBuildings[i].buildingData);
             this.items.addCapacity(newBuilding.getStorageBonus());
             this.buildings.push(newBuilding);
         }
@@ -83,6 +87,7 @@ export class Tile {
     }
 }
 
+//#region Board
 export class Board {
     constructor(tiles) {
         this.tiles = tiles;
@@ -135,6 +140,7 @@ export class Board {
     }
 }
 
+//#region Player
 export class Player {
     constructor(fullName, startingX, startingY, discordId) {
         this.name = this.makeNameShorthand(fullName);
@@ -230,6 +236,7 @@ export function makeRandomPlayers(amount, maxX, maxY) {
     return Array.from({ length: amount }, (_, i) => new Player(`U-${getRandomLetters(4)}`, Math.floor(Math.random() * maxX), Math.floor(Math.random() * maxY)));
 }
 
+//#region ConstructionSite
 export class ConstructionSite {
     constructor(buildingData) {
         this.buildingData = buildingData;
@@ -279,6 +286,7 @@ export class ConstructionSite {
     }
 }
 
+//#region Building
 export class Building {
     constructor(buildingData) {
         this.data = buildingData;
@@ -366,6 +374,7 @@ export class Building {
 /**
  * Stores a limited amount of heavy items and unlimited light items
  */
+//#region ItemContainer
 export class ItemContainer {
     constructor(maxSize) {
         this.maxSize = maxSize;
@@ -482,6 +491,7 @@ export class ItemContainer {
     }
 }
 
+//#region BlueprintProject
 export class BlueprintProject {
     constructor(buildingData) {
         this.buildingData = buildingData;
