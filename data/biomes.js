@@ -1,4 +1,4 @@
-import { BIOME, ITEM } from "../js/enums.js"
+import { BIOME, ITEM } from "../js/general/enums.js"
 
 export const BIOME_DATA = {}
 

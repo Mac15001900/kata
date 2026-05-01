@@ -1,4 +1,4 @@
-import { ITEM } from "../js/enums.js";
+import { ITEM } from "../js/general/enums.js";
 
 const HEAVY_ITEMS = [ITEM.DREWNO, ITEM.MIÓD, ITEM.MARMUR, ITEM.BIOMASA, ITEM.SZKŁO, ITEM.RUDA_ŻELAZA, ITEM.GRZYB, ITEM.ŻELAZO];
 

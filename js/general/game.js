@@ -1,12 +1,15 @@
-import { BUILDING_DATA } from "../data/building.js";
-import { Tile, Board, Player } from "./objects.js"
+import { BUILDING_DATA } from "../../data/buildings.js";
+// import { Tile, Board, Player } from "./objects/miscObjects.js"
+import Tile from "../objects/tile.js";
+import Board from "../objects/board.js";
+import Player from "../objects/player.js";
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
 import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, arraysEqual, printifyInventory, parseBuildingAndItems, getCraftingRecipe, printItemList, adjustWordPl } from "./utils.js";
 import fs from 'fs';
 import { ITEM, BIOME, ACTION, DIRECTION, STATE } from './enums.js';
-import { BIOME_DATA } from "../data/biomes.js";
+import { BIOME_DATA } from "../../data/biomes.js";
 import { ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser } from "./parsers.js";
-import { getFuelValue, getFoodValue, isHeavyItem, getFoodEatingResult } from "../data/items.js";
+import { getFuelValue, getFoodValue, isHeavyItem, getFoodEatingResult } from "../../data/items.js";
 
 export class Game {
     constructor(opts) {
@@ -298,7 +301,7 @@ export class Game {
                     let { items } = parseItemList(options, bundle);
                     let project = player.getBlueprintProject();
                     if (project.isSolution(items)) {
-                        this.checkBuildingDiscovery(project.getBuilding(), player);
+                        this.checkBuildingDiscovery(project.getBuildingId(), player);
                         player.finishBlueprintProject();
                     }
                     return { respond: base + project.messageForGuess(items) };

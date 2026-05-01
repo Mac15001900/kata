@@ -1,5 +1,5 @@
 
-import { ITEM, BUILDING } from "../js/enums.js"
+import { ITEM, BUILDING } from "../js/general/enums.js"
 
 export const BUILDING_DATA = [
     {

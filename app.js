@@ -8,16 +8,17 @@ import {
     MessageComponentTypes,
     verifyKeyMiddleware,
 } from 'discord-interactions';
-import { getRandomEmoji, DiscordRequest, getRandomLetters, getServerMembers } from './js/utils.js';
+import { getRandomEmoji, DiscordRequest, getRandomLetters, getServerMembers } from './js/general/utils.js';
 import { getShuffledOptions, getResult } from './examples/game.js';
 import Eris from "eris";
 import fs from 'fs';
-import { renderTableImage } from './js/drawTableImage.js';
-import { Tile, Player, makeRandomPlayers } from './js/objects.js';
-import { Game } from './js/game.js';
-import { BIOME, ACTION, DIRECTION } from './js/enums.js';
-import { BUILDING_DATA } from './data/building.js';
-import { bigGameTest } from './js/tests.js';
+import { renderTableImage } from './js/general/drawTableImage.js';
+import Tile from './js/objects/tile.js';
+import Player from './js/objects/player.js';
+import { Game } from './js/general/game.js';
+import { BIOME, ACTION, DIRECTION } from './js/general/enums.js';
+import { BUILDING_DATA } from './data/buildings.js';
+import { bigGameTest } from './js/general/tests.js';
 
 // Create an express app
 const app = express();
@@ -313,6 +314,10 @@ async function updateMapFile() {
     const data = game.board.printableData();
     const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
     fs.writeFileSync('tableThing.png', buffer);
+}
+
+function makeRandomPlayers(amount, maxX, maxY) {
+    return Array.from({ length: amount }, (_, i) => new Player(`U-${getRandomLetters(4)}`, Math.floor(Math.random() * maxX), Math.floor(Math.random() * maxY)));
 }
 
 if (DEBUG.runTestsOnStart) bigGameTest();

@@ -1,4 +1,3 @@
-import { Tile, Board, Player } from "./objects.js"
 import { removePolishCharacters } from "./utils.js";
 import { BIOME, ACTION, DIRECTION } from './enums.js';
 

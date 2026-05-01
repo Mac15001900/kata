@@ -1,10 +1,10 @@
-import { ExtraMath } from "./utils.js";
-import { ITEM, FORGE_ACTION, BUILDING } from "./enums.js";
-import { Building } from "./objects.js";
-import { BUILDING_DATA } from "../data/building.js";
+import { ExtraMath } from "../general/utils.js";
+import { ITEM, FORGE_ACTION, BUILDING } from "../general/enums.js";
+import Building from "../objects/building.js";
+import { BUILDING_DATA } from "../../data/buildings.js";
 
 const MAX_FORGE_LEVEL = 1000;
-export class Forge extends Building {
+class Forge extends Building {
     constructor() {
         super(BUILDING_DATA.find(b => b.type === BUILDING.KUŹNIA));
         this.storedIngots = [];

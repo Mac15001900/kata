@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { BIOME, ACTION, DIRECTION, ITEM, BUILDING } from './enums.js';
-import { BUILDING_DATA } from '../data/building.js';
-import { RECIPES } from '../data/crafting.js';
+import { BUILDING_DATA } from '../../data/buildings.js';
+import { RECIPES } from '../../data/crafting.js';
 
 let lastAllUsersRequests = {};
 let cachedMembers = {};
