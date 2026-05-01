@@ -3,6 +3,7 @@ import ItemContainer from './itemContainer.js';
 import ConstructionSite from './constructionSite.js';
 import Building from './building.js';
 import { BUILDING } from '../general/enums.js';
+import { Forge } from '../mechanics/forge.js';
 
 //#region Tile
 export default class Tile {

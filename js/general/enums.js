@@ -95,6 +95,8 @@ export const ITEM = Object.freeze({
     //Processed
     ŻELAZO: "żelazo",
     DESKA: "deska",
+    GWOŹDZIE: "gwoździe",
+    KAWAŁKI_ŻELAZA: "kawałki żelaza",
 
     //Seeds
     NASIONA_POMARAŃCZA: "pestki pomarańczy",
@@ -103,6 +105,11 @@ export const ITEM = Object.freeze({
     NASIONA_JABŁKO: "pestki jabłka",
     NASIONA_JAGODY: "nasiona jagód",
     NASIONA_TĘCZOWY_KWIAT: "nasiona tęczowego kwiatu",
+
+    //TOOLS:
+    ŻELAZNY_TOPÓR: "żelazny topór",
+    ŻELAZNY_KILOF: "żelazny kilof",
+    ŻELAZNY_MŁOT: "żelazny młot",
 
 });
 
@@ -129,4 +136,5 @@ export const FORGE_ACTION = Object.freeze({
     ZWĘŹ: "zwęź",
     WYKŁUJ: "wykłuj",
     UKLEP: "uklep",
+    ZAKOŃCZ: "zakończ",
 });

@@ -6,9 +6,9 @@ import Player from "../objects/player.js";
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
 import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, arraysEqual, printifyInventory, parseBuildingAndItems, getCraftingRecipe, printItemList, adjustWordPl } from "./utils.js";
 import fs from 'fs';
-import { ITEM, BIOME, ACTION, DIRECTION, STATE } from './enums.js';
+import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING } from './enums.js';
 import { BIOME_DATA } from "../../data/biomes.js";
-import { ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser } from "./parsers.js";
+import { ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber } from "./parsers.js";
 import { getFuelValue, getFoodValue, isHeavyItem, getFoodEatingResult } from "../../data/items.js";
 
 export class Game {
@@ -119,6 +119,10 @@ export class Game {
                 if (!options[0]) throw new ActionException("Wybierz przedmiot lub budynek.");
 
                 if (checkParser(parsePlayerSingleItem, options, bundle)) { //Using an item
+                    let { item, strings } = parsePlayerSingleItem(options, bundle);
+                    if ([ITEM.ŻELAZNY_KILOF, ITEM.ŻELAZNY_TOPÓR, ITEM.ŻELAZNY_MŁOT].includes(item)) {
+                        throw new ActionException("Nie musisz używać żadnej komendy, aby użyć tego przedmiotu.\nZapewnia on bonus tak długo, jak znajduje się w twoim ekwipunku.");
+                    }
                     //TODO
                 } else if (checkParser(parseBuildingOnTile, options, bundle)) {
                     let { building, strings } = parseBuildingOnTile(options, bundle);
@@ -222,18 +226,37 @@ export class Game {
                 return { secret: `Wyrzucasz 1x ${capitalize(item)}.` + freeAction };
             }
             case ACTION.DODAJ: {
-                let { construction, strings } = parseConstructionOnTile(options, bundle);
-                let { item } = parsePlayerSingleItem(strings, bundle);
+                if (checkParser(parseConstructionOnTile, options, bundle)) {
+                    let { construction, strings } = parseConstructionOnTile(options, bundle);
+                    let { item } = parsePlayerSingleItem(strings, bundle);
 
-                if (!construction.needsItem(item)) throw new ActionException(`Ten cel nie wymaga tego materiału.`)
+                    if (!construction.needsItem(item)) throw new ActionException(`Ten cel nie wymaga tego materiału.`)
 
-                construction.placeItem(item);
-                player.removeItems(item);
+                    construction.placeItem(item);
+                    player.removeItems(item);
 
-                if (construction.hasAllMaterials()) {
-                    return { respond: base + `To ostatni materiał którego wymaga ${construction.getName()}.\nPraca: 0/${construction.requiredWork}` + freeAction };
+                    if (construction.hasAllMaterials()) {
+                        return { respond: base + `To ostatni materiał którego wymaga ${construction.getName()}.\nPraca: 0/${construction.requiredWork}` + freeAction };
+                    } else {
+                        return { respond: base + `Pozostałe potrzebne materiały:\n${printifyInventory(construction.materialsRemaining)}\nPraca: 0/${construction.requiredWork}` + freeAction };
+                    }
+                } else if (checkParser(parseBuildingOnTile, options, bundle)) {
+                    let { building, strings } = parseBuildingOnTile(options, bundle);
+                    let { item } = parsePlayerSingleItem(strings, bundle);
+                    switch (building.getId()) {
+                        case BUILDING.KUŹNIA:
+                            let forge = currentTile.getBuilding(BUILDING.KUŹNIA);
+                            if (forge.canAddMaterial(item)) {
+                                let result = forge.addMaterial(item);
+                                player.items.removeItem(item);
+                                return { secret: `Tworzysz ${result.length} ${adjustWordPl(result.length, "sztabkę", "sztabki", "sztabek")} o wartościach: ${result.join(", ")}.` + freeAction };
+                            } else {
+                                throw new ActionException(`Nie możesz dodać tego przedmiotu do kuźni.`);
+                            }
+                        default: throw new ActionException(`Te budynek nie potrzebuje dodania żadnych przedmiotów`);
+                    }
                 } else {
-                    return { respond: base + `Pozostałe potrzebne materiały:\n${printifyInventory(construction.materialsRemaining)}\nPraca: 0/${construction.requiredWork}` + freeAction };
+                    throw new ActionException("Wybierz budynek lub plac budowy na tym polu.");
                 }
             }
             case ACTION.ZOSTAW: {
@@ -285,11 +308,13 @@ export class Game {
                 let { items } = parseItemList(options, bundle);
 
                 for (let i = 0; i < BUILDING_DATA.length; i++) {
-                    if (arraysEqual(BUILDING_DATA[i].cost, items)) {
-                        if (currentTile.getConstruction(BUILDING_DATA[i].id)) throw new ActionException("Tu już powstaje taki budynek.");
-                        currentTile.startConstruction(BUILDING_DATA[i]);
-                        this.checkBuildingDiscovery(BUILDING_DATA[i], player);
-                        return { respond: base + `Zaczynasz budować ${BUILDING_DATA[i].name}.` };
+                    let data = BUILDING_DATA[i];
+                    if (arraysEqual(data.cost, items)) {
+                        if (currentTile.getConstruction(data.id)) throw new ActionException("Tu już powstaje taki budynek.");
+                        if (data.unique && currentTile.hasBuilding(data.id)) throw new ActionException("Taki budynek może być w danym miejscu tylko jeden.");
+                        currentTile.startConstruction(data);
+                        this.checkBuildingDiscovery(data, player);
+                        return { respond: base + `Zaczynasz budować ${data.name}.` };
                     }
                 }
                 return { respond: base + `Niestety, nie udaje ci się zaprojektować żadnego budynku używając tych materiałów.` };
@@ -330,7 +355,32 @@ export class Game {
                 }
             }
             case ACTION.KUJ: {
+                let forge = currentTile.getBuilding(BUILDING.KUŹNIA);
+                if (!forge) throw new ActionException("Tej akcji możesz użyć tylko na polu z kuźnią.");
+                let { item, strings: s2 } = parsePlayerSingleItem(options, bundle);
+                let { number, strings: s3 } = parseNumber(s2, bundle);
+                let { forgeActions } = parseForgeActions(s3, bundle);
 
+                if (!forge.hasEnoughFuel()) throw new ActionException("Nie ma tu żadnego paliwa. Dorzuć najpierw coś palnego.");
+                if (forge.amountOfIngots() === 0) throw new ActionException("Nie ma tu żadnych sztabek do obróbki. Dodaj najpierw jakiś metal.");
+                if (!forge.hasIngot(item, number)) throw new ActionException("Nie ma tu takiej sztabki. Dostępne sztabki:\n" + forge.printIngots());
+                if (!forge.canPerformActions(forgeActions, player)) throw new ActionException("Nie jesteś w stanie wykonać aż tylu czynności naraz.");
+
+                let result = forge.applySeriesOfActions(forgeActions, number);
+                if (result === null) return { respond: base + "Nie udało ci się stworzyć żadnego przedmiotu." };
+                if (result.broken) {
+                    let scrap = result.getScrap();
+                    player.items.addItem(ITEM.KAWAŁKI_ŻELAZA);
+                    this.checkItemDiscovery(scrap, player);
+                    return { respond: base + `Sztabka pęka od zbyt intensywnych uderzeń.\nZyskujesz 1x ` + printItem(scrap) };
+                }
+                if (result.forgeLevel !== undefined) {
+                    return { respond: base + `Nowy poziom wykucia tej sztabki to ${result.forgeLevel}.` };
+                }
+                //If none of the above are true, the result in an item
+                player.items.addItem(result);
+                this.checkItemDiscovery(result, player);
+                return { respond: base + `Wykuwasz 1x ${printItem(result)}.` };
             }
             default:
                 player.remainingActions += cost;

@@ -483,7 +483,27 @@ export function bigGameTest() {
     action("projektuj marmur nasiona jagód tęczowy kwiat marmur marmur grzyb");
     assertSecretResponse();
 
+    //#region Forging
+    action("kuj");
+    assertSecretResponse();
 
+    action("buduj marmur marmur marmur żelazo żelazo");
+    testEqual(cityTile.construction.length, 1);
+    for (let i = 0; i < 3; i++) {
+        player.items.addItemList([ITEM.MARMUR, ITEM.ŻELAZO]);
+        action("dodaj kuźnia marmur");
+        action("dodaj kuźnia żelazo");
+    }
+    for (let i = 0; i < 5; i++) action("pracuj kuźnia");
+    testEqual(cityTile.construction.length, 0);
+    test(cityTile.hasBuilding(BUILDING.KUŹNIA));
+    let forge = cityTile.getBuilding(BUILDING.KUŹNIA);
+    test(forge);
+    testEqual(forge.getId(), BUILDING.KUŹNIA);
+    testEqual(forge.operationsAvailable(), 0);
+    testEqual(forge.amountOfIngots(), 0);
+    test(forge.canAddMaterial(ITEM.ŻELAZO));
+    test(!forge.canAddMaterial(ITEM.POMARAŃCZA));
 
 
     console.log(`Ran ${testsRan} tests, ${testsPassed} passed.`);

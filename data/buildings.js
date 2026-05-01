@@ -36,11 +36,13 @@ export const BUILDING_DATA = [
         name: "Warsztat",
         cost: [ITEM.DREWNO, ITEM.DREWNO, ITEM.MARMUR, ITEM.MARMUR, ITEM.ŻELAZO],
         canCraft: true,
+        unique: true,
     }, {
         id: BUILDING.KUŹNIA,
         name: "Kuźnia",
         cost: [ITEM.MARMUR, ITEM.MARMUR, ITEM.MARMUR, ITEM.ŻELAZO, ITEM.ŻELAZO],
         canCraft: true,
         fuelPerOperation: 1,
+        unique: true,
     }
 ]
