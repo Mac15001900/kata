@@ -1,6 +1,7 @@
 import { STATE, BIOME, ITEM, ACTION } from '../general/enums.js';
 import ItemContainer from './itemContainer.js';
 import { BlueprintProject } from './miscObjects.js';
+import ItemData from '../../data/items.js';
 
 //#region Player
 export default class Player {
@@ -74,18 +75,18 @@ export default class Player {
     }
 
     getActionStrength(action, biome) {
-        switch (action) {
-            case ACTION.ZBIERAJ:
-                if ([BIOME.YELLOW, BIOME.CYAN, BIOME.BLUE].includes(biome) && this.items.hasItem(ITEM.ŻELAZNY_KILOF)) return 2;
-                if ([BIOME.RED, BIOME.GREEN, BIOME.VIOLET].includes(biome) && this.items.hasItem(ITEM.ŻELAZNY_TOPÓR)) return 2;
-                return 1;
-            case ACTION.KUJ:
-            case ACTION.PRACUJ:
-                if (this.items.hasItem(ITEM.ŻELAZNY_MŁOT)) return 2;
-                else return 1;
-            default:
-                return 1;
-        }
+        let strength = 1;
+        let usedItems = [];
+        this.items.asList().forEach(item => {
+            if (ItemData[item].actionBonusActions.includes(action) &&
+                ItemData[item].actionBonusBiomes.includes(biome) &&
+                (!usedItems.includes(item) || ItemData[item].actionBonusStacks)) {
+
+                strength += ItemData[item].actionBonusStrength;
+                usedItems.push(item);
+            }
+        });
+        return strength;
     }
 
     hasBlueprintProject() {

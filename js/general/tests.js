@@ -1,5 +1,6 @@
 import { Game } from "./game.js";
 import { ITEM, BUILDING, STATE, ACTION } from "./enums.js";
+import ItemData from "../../data/items.js";
 
 
 let testsPassed = 0;
@@ -80,6 +81,7 @@ export function bigGameTest() {
     assertSecretResponse();
     testPlayerPosition(player, 0, 0);
 
+    //#region Item collecion 
     //Light-item collection
     action("szukaj");
     testEqual(player.items.lightItems.length, 1, "Player finding an item");
@@ -125,6 +127,37 @@ export function bigGameTest() {
     action("wyrzuć 10 Marmur");
     testEqual(player.items.getItemAmount(ITEM.MARMUR), 2, "Wrong item thrown away");
 
+    //Container tests
+    test(!player.items.addHeavyItem(ITEM.BIOMASA));
+    test(player.items.hasItem(ITEM.MARMUR));
+    test(!player.items.hasItem(ITEM.BIOMASA));
+    test(player.items.hasAllItems([ITEM.MARMUR, ITEM.MARMUR]));
+    test(!player.items.hasAllItems([ITEM.MARMUR, ITEM.MARMUR, ITEM.MARMUR]));
+    test(!player.items.canFitItem(ITEM.BIOMASA));
+    test(!player.items.canFitItemList([ITEM.BIOMASA]));
+    test(player.items.canFitItemList([ITEM.POMARAŃCZA]));
+    test(player.items.canFitItemList([]));
+    testEqual(player.items.getRemainingCapacity(), 0);
+
+    action("wyrzuć marmur")
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 1);
+    test(player.items.hasItem(ITEM.MARMUR));
+    test(player.items.hasAllItems([ITEM.MARMUR]));
+    test(!player.items.hasAllItems([ITEM.MARMUR, ITEM.MARMUR]));
+    test(player.items.canFitItem(ITEM.BIOMASA));
+    test(player.items.canFitItemList([ITEM.BIOMASA]));
+    test(!player.items.canFitItemList([ITEM.BIOMASA, ITEM.BIOMASA]));
+    testEqual(player.items.getRemainingCapacity(), 1);
+
+    player.items.removeItem(ITEM.MARMUR);
+    testEqual(player.items.getRemainingCapacity(), 2);
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 0);
+    testEqual(player.items.asList().length, 0);
+    test(player.items.canFitItemList([ITEM.BIOMASA]));
+    test(player.items.canFitItemList([ITEM.BIOMASA, ITEM.BIOMASA]));
+    test(player.items.canFitItemList([ITEM.BIOMASA, ITEM.BIOMASA, ITEM.POMARAŃCZA]));
+    test(!player.items.canFitItemList([ITEM.BIOMASA, ITEM.BIOMASA, ITEM.MARMUR]));
+
     //#region Home construction
     let cityTile = game.board.get(player.x, player.y);
     testEqual(cityTile.x, player.x, "Tile position incorrect");
@@ -157,6 +190,7 @@ export function bigGameTest() {
     action("dodaj Dom Biomasa");
     action("dodaj Dom Drewno");
     testEqual(constructionSite.materialsRemaining.length, 4);
+    action("zbierz", 2);
     testEqual(player.items.getItemAmount(ITEM.MARMUR), 2);
     action("dodaj Dom Marmur");
     testEqual(constructionSite.materialsRemaining.length, 3);
@@ -351,6 +385,8 @@ export function bigGameTest() {
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 1);
     action("dorzuć piec drewno");
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 0);
+    testEqual(furnace.operationsAvailable(), 1);
+    action("dorzuć piec drewno"); //Fails - we don't have any more wood at this point
     testEqual(furnace.operationsAvailable(), 1);
 
     testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 1);
@@ -689,8 +725,11 @@ export function bigGameTest() {
     action("dodaj dom drewno", 2);
     test(cityTile.getConstruction(BUILDING.DOM).hasAllMaterials());
     testEqual(cityTile.getConstruction(BUILDING.DOM).workRemaining(), 4);
+    player.items.addItem(ITEM.ŻELAZNY_MŁOT);
+    testEqual(player.items.getItemAmount(ITEM.ŻELAZNY_MŁOT), 2);
     action("pracuj dom");
     testEqual(cityTile.getConstruction(BUILDING.DOM).workRemaining(), 2);
+    action("wyrzuć żelazny młot");
     action("zostaw żelazny młot");
     test(!player.items.hasItem(ITEM.ŻELAZNY_MŁOT));
     action("pracuj dom");

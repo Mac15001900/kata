@@ -1,4 +1,4 @@
-import { getFuelValue } from '../../data/itemUtils.js';
+import ItemData from '../../data/items.js';
 
 //#region Building
 export default class Building {
@@ -51,7 +51,7 @@ export default class Building {
     }
 
     addFuelItem(item) {
-        this.fuel += getFuelValue(item);
+        this.fuel += ItemData[item].fuelValue;
     }
 
     canStartCrafting() {

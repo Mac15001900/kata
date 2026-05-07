@@ -1,4 +1,4 @@
-import { isHeavyItem } from '../../data/itemUtils.js';
+import ItemData from '../../data/items.js';
 import { printifyInventory } from '../general/utils.js';
 
 
@@ -25,7 +25,7 @@ export default class ItemContainer {
     }
 
     addItem(item) {
-        if (isHeavyItem(item)) return this.addHeavyItem(item);
+        if (this.isHeavyItem(item)) return this.addHeavyItem(item);
         else return this.addLightItem(item);
     }
 
@@ -33,6 +33,10 @@ export default class ItemContainer {
         for (let i = 0; i < items.length; i++) {
             this.addItem(items[i]);
         }
+    }
+
+    asList() {
+        return this.heavyItems.concat(this.lightItems);
     }
 
     removeItem(item) {
@@ -67,7 +71,7 @@ export default class ItemContainer {
     }
 
     hasAllItems(items) {
-        let remaining = [...this.heavyItems.concat(this.lightItems)];
+        let remaining = [...this.asList()];
         for (let key in items) {
             let index = remaining.indexOf(items[key]);
             if (index > -1) remaining.splice(index, 1);
@@ -77,7 +81,7 @@ export default class ItemContainer {
     }
 
     getItemAmount(item) {
-        if (item) return (this.heavyItems.concat(this.lightItems)).filter(i => i === item).length;
+        if (item) return (this.asList()).filter(i => i === item).length;
         else return this.heavyItems.length + this.lightItems.length;
     }
 
@@ -87,11 +91,11 @@ export default class ItemContainer {
 
     canFitItem(item) {
         if (this.maxSize === 0) return false; //If there is no storage at all, we can't even store light items
-        return isHeavyItem(item) ? this.getRemainingCapacity() > 0 : true;
+        return this.isHeavyItem(item) ? this.getRemainingCapacity() > 0 : true;
     }
 
     canFitItemList(items) {
-        let heavyItems = items.filter(isHeavyItem);
+        let heavyItems = items.filter(this.isHeavyItem);
         return this.getRemainingCapacity() >= heavyItems.length;
     }
 
@@ -119,5 +123,9 @@ export default class ItemContainer {
     clearAllItems() {
         this.heavyItems = [];
         this.lightItems = [];
+    }
+
+    isHeavyItem(item) {
+        return ItemData[item].isHeavy;
     }
 }

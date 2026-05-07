@@ -9,7 +9,7 @@ import fs from 'fs';
 import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING, FORGE_RESULT } from './enums.js';
 import { BIOME_DATA } from "../../data/biomes.js";
 import { ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber, parseForgeActions } from "./parsers.js";
-import { getFuelValue, getFoodValue, isHeavyItem, getFoodEatingResult } from "../../data/itemUtils.js";
+import ItemData from "../../data/items.js";
 
 export class Game {
     constructor(opts) {
@@ -141,8 +141,8 @@ export class Game {
 
                         //Calculate if we'll have space for the output after removing the input
                         let currentSpace = player.items.getRemainingCapacity();
-                        let spaceAfterRemovingInput = currentSpace + recipe.input.filter(isHeavyItem).length;
-                        let spaceAfterAddingOutput = spaceAfterRemovingInput - recipe.output.filter(isHeavyItem).length;
+                        let spaceAfterRemovingInput = currentSpace + recipe.input.filter(i => ItemData[i].isHeavy).length;
+                        let spaceAfterAddingOutput = spaceAfterRemovingInput - recipe.output.filter(i => ItemData[i].isHeavy).length;
                         if (spaceAfterAddingOutput < 0)
                             throw new ActionException(`Nie masz miejsca na ${recipe.output.length === 1 ? "przedmiot, który" : "przedmioty, które"} próbujesz stworzyć.`);
 
@@ -165,11 +165,10 @@ export class Game {
                 let { item } = parsePlayerSingleItem(options, bundle);
                 let message = this.eatItem(item, player);
                 player.removeItems(item);
-                let seeds = getFoodEatingResult(item);
-                if (seeds) {
-                    player.addItem(seeds);
-                    this.checkItemDiscovery(seeds, player);
-                    message += `\nZyskujesz ${printItem(seeds)}.`;
+                let seeds = ItemData[item].foodEatingResultItems;
+                if (seeds && seeds.length > 0) {
+                    this.giveItems(seeds, player);
+                    message += `\nZyskujesz ${printItemLoot(seeds)}.`;
                 }
                 return { secret: message + freeAction };
             }
@@ -281,7 +280,7 @@ export class Game {
                 let { building, strings } = parseBuildingOnTile(options, bundle);
                 let { item } = parsePlayerSingleItem(strings, bundle);
 
-                if (getFuelValue(item) === 0) throw new ActionException("Ten przedmiot nie nadaje się na paliwo.");
+                if (ItemData[item].fuelValue === 0) throw new ActionException("Ten przedmiot nie nadaje się na paliwo.");
 
                 building.addFuelItem(item);
                 player.items.removeItem(item);
@@ -472,6 +471,8 @@ export class Game {
     }
 
     eatItem(item, player) {
+        let data = ItemData[item];
+        console.assert(data, "Item " + item + " not found in ItemData");
         if (item === ITEM.IMBIR) throw new ActionException("Imbir jest świetną przyprawą, ale nie jesteś w stanie zjeść go samego.");
         if (item === ITEM.MIÓD) throw new ActionException("Tutejszy miód zdaje się być jeszcze słodszy niż ten z twojej rzeczywistości. Nie jesteś w stanie zjeść go samego.");
         if (item === ITEM.GRZYB) throw new ActionException("O ile zdecydowanie wygląda jak grzyb, w przeciwieństwie do zwykłych grzybów zupełnie nie da się go zjeść.");
@@ -480,7 +481,7 @@ export class Game {
             return "O ile ten kwiat nie jest szczególnie sycący, przepełnia cię zupełnie innego rodzaju energią.\nTwoja maksymalna mana zwiększa się o 1.";
         }
 
-        let foodValue = getFoodValue(item);
+        let foodValue = ItemData[item].foodValue;
         if (!foodValue) throw new ActionException("Ten przedmiot nie jest jadalny.");
 
         let fedBuff = player.stateDuration(STATE.FED);
