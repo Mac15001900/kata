@@ -45,7 +45,7 @@ global.TEST_SERVER = TEST_SERVER;
 const DEBUG = {
     addMacOnStart: true,
     updateMapOnAction: true,
-    runTestsOnStart: false,
+    runTestsOnStart: true,
     ignoreBuildingCosts: false,
     hideDisoveryMessages: false,
 }

@@ -6,9 +6,9 @@ import Player from "../objects/player.js";
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
 import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, arraysEqual, printifyInventory, parseBuildingAndItems, getCraftingRecipe, printItemList, adjustWordPl } from "./utils.js";
 import fs from 'fs';
-import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING } from './enums.js';
+import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING, FORGE_RESULT } from './enums.js';
 import { BIOME_DATA } from "../../data/biomes.js";
-import { ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber } from "./parsers.js";
+import { ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber, parseForgeActions } from "./parsers.js";
 import { getFuelValue, getFoodValue, isHeavyItem, getFoodEatingResult } from "../../data/items.js";
 
 export class Game {
@@ -256,7 +256,7 @@ export class Game {
                         default: throw new ActionException(`Te budynek nie potrzebuje dodania żadnych przedmiotów`);
                     }
                 } else {
-                    throw new ActionException("Wybierz budynek lub plac budowy na tym polu.");
+                    throw new ActionException("Wybierz budynek lub plac budowy w tym sektorze.");
                 }
             }
             case ACTION.ZOSTAW: {
@@ -357,7 +357,7 @@ export class Game {
             case ACTION.KUJ: {
                 let forge = currentTile.getBuilding(BUILDING.KUŹNIA);
                 if (!forge) throw new ActionException("Tej akcji możesz użyć tylko na polu z kuźnią.");
-                let { item, strings: s2 } = parsePlayerSingleItem(options, bundle);
+                let { item, strings: s2 } = parseSingleItem(options, bundle);
                 let { number, strings: s3 } = parseNumber(s2, bundle);
                 let { forgeActions } = parseForgeActions(s3, bundle);
 
@@ -367,20 +367,21 @@ export class Game {
                 if (!forge.canPerformActions(forgeActions, player)) throw new ActionException("Nie jesteś w stanie wykonać aż tylu czynności naraz.");
 
                 let result = forge.applySeriesOfActions(forgeActions, number);
-                if (result === null) return { respond: base + "Nie udało ci się stworzyć żadnego przedmiotu." };
-                if (result.broken) {
-                    let scrap = result.getScrap();
-                    player.items.addItem(ITEM.KAWAŁKI_ŻELAZA);
-                    this.checkItemDiscovery(scrap, player);
-                    return { respond: base + `Sztabka pęka od zbyt intensywnych uderzeń.\nZyskujesz 1x ` + printItem(scrap) };
+                switch (result.type) {
+                    case FORGE_RESULT.CHANGED_INGOT:
+                        return { respond: base + `Nowy poziom wykucia tej sztabki to ${result.ingot.forgeLevel}.` };
+                    case FORGE_RESULT.FAILED_FINISH:
+                        return { respond: base + `Nie udało ci się stworzyć żadnego przedmiotu.\nNowy poziom wykucia tej sztabki to ${result.ingot.forgeLevel}.` };
+                    case FORGE_RESULT.CREATED_ITEM:
+                        player.items.addItem(result.item);
+                        this.checkItemDiscovery(result.item, player);
+                        return { respond: base + `Wykuwasz 1x ${printItem(result.item)}.` };
+                    case FORGE_RESULT.BROKEN:
+                        let scrap = result.ingot.getScrap();
+                        player.items.addItem(ITEM.KAWAŁKI_ŻELAZA);
+                        this.checkItemDiscovery(scrap, player);
+                        return { respond: base + `Sztabka pęka od zbyt intensywnych uderzeń.\nZyskujesz 1x ` + printItem(scrap) };
                 }
-                if (result.forgeLevel !== undefined) {
-                    return { respond: base + `Nowy poziom wykucia tej sztabki to ${result.forgeLevel}.` };
-                }
-                //If none of the above are true, the result in an item
-                player.items.addItem(result);
-                this.checkItemDiscovery(result, player);
-                return { respond: base + `Wykuwasz 1x ${printItem(result)}.` };
             }
             default:
                 player.remainingActions += cost;

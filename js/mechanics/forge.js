@@ -1,5 +1,5 @@
 import { ExtraMath } from "../general/utils.js";
-import { ITEM, FORGE_ACTION, BUILDING } from "../general/enums.js";
+import { ITEM, FORGE_ACTION, FORGE_RESULT, BUILDING } from "../general/enums.js";
 import Building from "../objects/building.js";
 import { BUILDING_DATA } from "../../data/buildings.js";
 
@@ -15,25 +15,25 @@ export class Forge extends Building {
 
     applySeriesOfActions(actions, ingotValue) {
         this.runOneCraft();
-        let ingot = this.storedIngots.find(i => i.value === ingotValue);
+        let ingot = this.storedIngots.find(i => i.forgeLevel === ingotValue);
         console.assert(ingot);
         for (let i = 0; i < actions.length; i++) {
             if (actions[i] === FORGE_ACTION.ZAKOŃCZ) {
                 let item = this.makeItem(ingot);
                 if (item) {
                     this.removeIngot(ingot);
-                    return item;
+                    return { item, type: FORGE_RESULT.CREATED_ITEM };
                 } else {
-                    return null;
+                    return { ingot, type: FORGE_RESULT.FAILED_FINISH };
                 }
             }
-            applyActionToIngot(actions[i], ingot);
+            this.applyActionToIngot(actions[i], ingot);
             if (ingot.broken) {
                 this.removeIngot(ingot);
-                return ingot;
+                return { ingot, type: FORGE_RESULT.BROKEN };
             }
         }
-        return ingot;
+        return { ingot, type: FORGE_RESULT.CHANGED_INGOT };
     }
 
     canAddMaterial(item) {
@@ -45,7 +45,7 @@ export class Forge extends Building {
     }
 
     hasIngot(material, value) {
-        return this.storedIngots.some(ingot => ingot.value === value && ingot.material === material);
+        return this.storedIngots.some(ingot => ingot.forgeLevel === value && ingot.material === material);
     }
 
     canPerformActions(actions, player) {
@@ -93,6 +93,7 @@ export class Forge extends Building {
 
 
     applyActionToIngot(action, ingot) {
+        console.assert(ingot && ingot instanceof Ingot);
         ingot.forgeLevel = Math.max(0, this.applyActionToValue(action, ingot.forgeLevel));
         if (ingot.forgeLevel > MAX_FORGE_LEVEL) ingot.broken = true;
     }
@@ -120,7 +121,7 @@ export class Forge extends Building {
             //Decrementing
             case FORGE_ACTION.ZAGĘŚĆ: return value - ExtraMath.sumOfDigits(value);
             case FORGE_ACTION.SKURCZ: return value - ExtraMath.greatestDivisor(value);
-            case FORGE_ACTION.ZWĘŹ: return value % 7;
+            case FORGE_ACTION.ZWĘŹ: return value - (value % 7);
             case FORGE_ACTION.WYKŁUJ: return value / ExtraMath.greatestDivisor(value);
             case FORGE_ACTION.UKLEP: return value - digits.length;
             case FORGE_ACTION.ZAKOŃCZ: return value;
@@ -133,6 +134,10 @@ export class Forge extends Building {
 
     printIngots() {
         return this.storedIngots.map(i => i.print()).join('\n');
+    }
+
+    forceAddIngot(material, forgeLevel) {
+        this.storedIngots.push(new Ingot(material, forgeLevel));
     }
 }
 
@@ -175,5 +180,3 @@ class Ingot {
     ZAKOŃCZ: "zakończ",
 });
 */
-
-global.test = (a, b) => (new Forge()).applyActionToValue(a, b);

@@ -125,16 +125,24 @@ export const BUILDING = Object.freeze({
 });
 
 export const FORGE_ACTION = Object.freeze({
-    NONE: 0,
-    UDERZ_SŁABO: "uderz słabo",
-    UDERZ_ŚREDNIO: "uderz średnio",
-    UDERZ_MOCNO: "uderz mocno",
-    ROZCIĄGNIJ: "rozciągnij",
-    WYGNIJ: "wygnij",
-    ZAGĘŚĆ: "zagęść",
-    SKURCZ: "skurcz",
-    ZWĘŹ: "zwęź",
-    WYKŁUJ: "wykłuj",
-    UKLEP: "uklep",
+    NONE: "",
+    UDERZ_SŁABO: "uderz słabo", // +1
+    UDERZ_ŚREDNIO: "uderz średnio", // + sum of digits
+    UDERZ_MOCNO: "uderz mocno", // *2
+    ROZCIĄGNIJ: "rozciągnij", // + last digit
+    WYGNIJ: "wygnij", // Flips last two digits
+    ZAGĘŚĆ: "zagęść", // - sum of digits
+    SKURCZ: "skurcz", // - greatest divisor
+    ZWĘŹ: "zwęź", // x - (x % 7)
+    WYKŁUJ: "wykłuj", // divide by greatest divisor
+    UKLEP: "uklep", // - amount of digits
     ZAKOŃCZ: "zakończ",
+});
+
+export const FORGE_RESULT = Object.freeze({
+    NONE: 0,
+    CHANGED_INGOT: 1,
+    FAILED_FINISH: 2,
+    CREATED_ITEM: 3,
+    BROKEN: 4
 });

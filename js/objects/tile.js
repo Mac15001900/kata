@@ -62,6 +62,14 @@ export default class Tile {
         else return this.buildings.filter(b => b.getId() === id)[number - 1];
     }
 
+    /**
+     * 
+     * @returns {Forge}
+     */
+    getForge() {
+        return this.getBuilding(BUILDING.KUŹNIA);
+    }
+
     startConstruction(buildingData) {
         // console.log(`Started construction of a ${buildingData.name} at ${this.x},${this.y}`);
         this.construction.push(new ConstructionSite(buildingData));

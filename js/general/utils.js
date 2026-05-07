@@ -86,6 +86,7 @@ export function removePolishCharacters(string) {
 }
 
 export function stringsEqual(a, b) {
+    console.assert(typeof a === 'string' && typeof b === 'string', "stringsEqual called with non-string arguments" + a + " " + b);
     return removePolishCharacters(a).toLowerCase() === (removePolishCharacters(b)).toLowerCase();
 }
 
@@ -216,6 +217,7 @@ export const ExtraMath = {
         return (a % b + b) % b;
     },
     greatestDivisor: function (number) {
+        if (number <= 1) return 1;
         let lowerDivisor = 2;
         let limit = Math.ceil(Math.sqrt(number));
         while (number % lowerDivisor !== 0) {
@@ -225,3 +227,5 @@ export const ExtraMath = {
         return number / lowerDivisor;
     }
 }
+
+global.ExtraMath = ExtraMath;

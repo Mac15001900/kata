@@ -497,13 +497,142 @@ export function bigGameTest() {
     for (let i = 0; i < 5; i++) action("pracuj kuźnia");
     testEqual(cityTile.construction.length, 0);
     test(cityTile.hasBuilding(BUILDING.KUŹNIA));
-    let forge = cityTile.getBuilding(BUILDING.KUŹNIA);
+    let forge = cityTile.getForge();
     test(forge);
     testEqual(forge.getId(), BUILDING.KUŹNIA);
     testEqual(forge.operationsAvailable(), 0);
     testEqual(forge.amountOfIngots(), 0);
     test(forge.canAddMaterial(ITEM.ŻELAZO));
     test(!forge.canAddMaterial(ITEM.POMARAŃCZA));
+
+    testEqual(cityTile.items.getItemAmount(ITEM.ŻELAZO), 1);
+
+    action("dodaj kuźnia");
+    assertSecretResponse();
+    action("dodaj kuźnia żelazo");
+    testEqual(forge.amountOfIngots(), 3);
+    let forgeLevel = forge.storedIngots[0].forgeLevel;
+    //test(forge.XXXhasIngot(ITEM.ŻELAZO, forgeLevel));
+    action(`kuj żelazo ${forgeLevel} uderz słabo`);
+    assertSecretResponse();
+
+    action("idź lewo");
+    action("zbierz");
+    action("idź prawo");
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 1);
+    test(!forge.hasEnoughFuel());
+    action("dorzuć kuźnia drewno");
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 0);
+    test(forge.hasEnoughFuel());
+    testEqual(forge.operationsAvailable(), 1);
+    action(`kuj żelazo ${forgeLevel} uderz słabo`);
+    assertSecretResponse(true);
+    //test(forge.XXXhasIngot(ITEM.ŻELAZO, forgeLevel + 1));
+    testEqual(forge.operationsAvailable(), 0);
+    action(`kuj żelazo ${forgeLevel + 1} uderz słabo`);
+    assertSecretResponse();
+
+    for (let i = 0; i < 40; i++) {
+        player.items.addItemList([ITEM.DREWNO]);
+        action("dorzuć kuźnia drewno");
+    }
+    testEqual(forge.fuel, 40);
+    testEqual(forge.operationsAvailable(), 40);
+
+    //General tests for operations
+    forge.storedIngots = [];
+    testEqual(forge.amountOfIngots(), 0);
+    forge.forceAddIngot(ITEM.ŻELAZO, 30);
+    testEqual(forge.amountOfIngots(), 1);
+    test(forge.hasIngot(ITEM.ŻELAZO, 30));
+    action(`kuj żelazo 30 uderz słabo`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 31));
+    action(`kuj żelazo 31 uderz słabo uderz słabo`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 33));
+    action(`kuj żelazo 33 uderz słabo uderz słabo uderz słabo`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 36));
+    action(`kuj żelazo 36 uderz słabo uderz słabo uderz słabo uderz słabo`);
+    assertSecretResponse();
+    action(`kuj żelazo 36 uderz średnio`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 45));
+    action(`kuj żelazo 45 uderz słabo uderz średnio`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 56));
+    action(`kuj żelazo 56 uderz mocno`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 112));
+    action(`kuj żelazo 112 rozciągnij`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 114));
+    action(`kuj żelazo 114 rozciągnij`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 118));
+    action(`kuj żelazo 118 wygnij`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 181));
+    action(`kuj żelazo 181 zagęść`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 171));
+    action(`kuj żelazo 171 zagęść`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 162));
+    action(`kuj żelazo 162 uderz słabo wykłuj`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 163));
+    action(`kuj żelazo 163 skurcz`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 162));
+    action(`kuj żelazo 162 uklep uderz słabo uderz słabo`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 161));
+    action(`kuj żelazo 161 wykłuj`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 7));
+    action(`kuj żelazo 7 wygnij`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 7));
+    action(`kuj żelazo 7 zwęź`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 7));
+    action(`kuj żelazo 7 uderz słabo uderz słabo zwęź`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 7));
+    action(`kuj żelazo 7 uklep`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 6));
+    action(`kuj żelazo 6 zwęź`);
+    //Operating on 0
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    action(`kuj żelazo 0 zwęź`);
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    action('kuj żelazo 0 uderz średnio');
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    action('kuj żelazo 0 uderz mocno');
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    action('kuj żelazo 0 rozciągnij');
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    action('kuj żelazo 0 wygnij');
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    action('kuj żelazo 0 zagęść');
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    action('kuj żelazo 0 skurcz');
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    action('kuj żelazo 0 zwęź');
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    action('kuj żelazo 0 wykłuj');
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    action('kuj żelazo 0 uklep');
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    action('kuj żelazo 0 zakończ');
+    test(forge.hasIngot(ITEM.ŻELAZO, 0));
+    //Making a pickaxe
+    action('kuj żelazo 0 uderz słabo uderz słabo uderz mocno');
+    test(forge.hasIngot(ITEM.ŻELAZO, 4));
+    action('kuj żelazo 4 uderz mocno uderz mocno uderz mocno');
+    test(forge.hasIngot(ITEM.ŻELAZO, 32));
+    action('kuj żelazo 32 uderz mocno uderz mocno zakończ');
+    test(forge.hasIngot(ITEM.ŻELAZO, 128));
+    testEqual(forge.storedIngots.length, 1);
+    action('kuj żelazo 128 uklep uderz mocno zakończ');
+    testEqual(forge.storedIngots.length, 0);
+    test(player.items.hasItem(ITEM.ŻELAZNY_KILOF));
+    test(discoveries.items.includes(ITEM.ŻELAZNY_KILOF));
+    //Breaking an ingot
+    forge.forceAddIngot(ITEM.ŻELAZO, 10);
+    testEqual(forge.amountOfIngots(), 1);
+    action('kuj żelazo 10 uderz mocno uderz mocno uderz mocno');
+    action('kuj żelazo 80 uderz mocno uderz mocno uderz mocno');
+    action('kuj żelazo 640 uderz mocno uderz mocno uderz mocno');
+    testEqual(forge.amountOfIngots(), 0);
+    test(player.items.hasItem(ITEM.KAWAŁKI_ŻELAZA));
+    test(discoveries.items.includes(ITEM.KAWAŁKI_ŻELAZA));
+
+
 
 
     console.log(`Ran ${testsRan} tests, ${testsPassed} passed.`);

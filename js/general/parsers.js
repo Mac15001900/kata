@@ -54,7 +54,7 @@ export function parseSingleItem(strings) {
 }
 
 export function parsePlayerSingleItem(strings, bundle) {
-    let { item, newStrings } = parseSingleItem(strings);
+    let { item, strings: newStrings } = parseSingleItem(strings);
     if (bundle.player.items.hasItem(item)) return { item, strings: newStrings };
     else throw new ActionException("Nie posiadasz takiego przedmiotu.");
 }
