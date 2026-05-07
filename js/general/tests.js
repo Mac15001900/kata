@@ -146,7 +146,6 @@ export function bigGameTest() {
     let constructionSite = cityTile.construction[0];
     test(constructionSite.needsItem(ITEM.DREWNO));
     test(constructionSite.needsItem(ITEM.MARMUR));
-    testEqual(constructionSite.materialsPlaced.length, 0);
     testEqual(constructionSite.materialsRemaining.length, 4);
     testEqual(constructionSite.workRemaining(), 4);
     action("pracuj Dom");
@@ -497,6 +496,8 @@ export function bigGameTest() {
     for (let i = 0; i < 5; i++) action("pracuj kuźnia");
     testEqual(cityTile.construction.length, 0);
     test(cityTile.hasBuilding(BUILDING.KUŹNIA));
+    action("buduj marmur marmur marmur żelazo żelazo");
+    assertSecretResponse(); //Can only have 1 forge per tile
     let forge = cityTile.getForge();
     test(forge);
     testEqual(forge.getId(), BUILDING.KUŹNIA);
@@ -512,7 +513,7 @@ export function bigGameTest() {
     action("dodaj kuźnia żelazo");
     testEqual(forge.amountOfIngots(), 3);
     let forgeLevel = forge.storedIngots[0].forgeLevel;
-    //test(forge.XXXhasIngot(ITEM.ŻELAZO, forgeLevel));
+    test(forge.hasIngot(ITEM.ŻELAZO, forgeLevel));
     action(`kuj żelazo ${forgeLevel} uderz słabo`);
     assertSecretResponse();
 
@@ -525,19 +526,22 @@ export function bigGameTest() {
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 0);
     test(forge.hasEnoughFuel());
     testEqual(forge.operationsAvailable(), 1);
+    action(`kuj żelazo 999 uderz słabo`);
+    assertSecretResponse();
+    testEqual(forge.operationsAvailable(), 1);
     action(`kuj żelazo ${forgeLevel} uderz słabo`);
     assertSecretResponse(true);
-    //test(forge.XXXhasIngot(ITEM.ŻELAZO, forgeLevel + 1));
+    test(forge.hasIngot(ITEM.ŻELAZO, forgeLevel + 1));
     testEqual(forge.operationsAvailable(), 0);
     action(`kuj żelazo ${forgeLevel + 1} uderz słabo`);
     assertSecretResponse();
 
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 400; i++) {
         player.items.addItemList([ITEM.DREWNO]);
         action("dorzuć kuźnia drewno");
     }
-    testEqual(forge.fuel, 40);
-    testEqual(forge.operationsAvailable(), 40);
+    testEqual(forge.fuel, 400);
+    testEqual(forge.operationsAvailable(), 400);
 
     //General tests for operations
     forge.storedIngots = [];
@@ -632,7 +636,97 @@ export function bigGameTest() {
     test(player.items.hasItem(ITEM.KAWAŁKI_ŻELAZA));
     test(discoveries.items.includes(ITEM.KAWAŁKI_ŻELAZA));
 
+    //#region Tools
 
+    //Using a pickaxe
+    testEqual(player.items.getRemainingCapacity(), 2);
+    action("zbierz");
+    testEqual(player.items.getRemainingCapacity(), 0);
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 2);
+    action("wyrzuć marmur", 2);
+    action("zostaw żelazny kilof");
+    testEqual(player.items.getRemainingCapacity(), 2);
+    action("zbierz");
+    testEqual(player.items.getRemainingCapacity(), 1);
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 1);
+    action("wyrzuć marmur");
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 0);
+    action("weź żelazny kilof");
+    action("zbierz");
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 2);
+    action("wyrzuć marmur", 2);
+    action("idź lewo");
+    testPlayerPosition(player, 0, 1);
+    action("zbierz");
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 1);
+    action("wyrzuć drewno");
+    action("idź prawo");
+
+    //Using a hammer
+    forge.forceAddIngot(ITEM.ŻELAZO, 350);
+    action("kuj żelazo 350 uderz słabo uderz słabo uderz słabo uderz słabo");
+    assertSecretResponse();
+    action("kuj żelazo 350 uderz mocno zakończ");
+    testEqual(forge.storedIngots.length, 0);
+    test(player.items.hasItem(ITEM.ŻELAZNY_MŁOT));
+    test(discoveries.items.includes(ITEM.ŻELAZNY_MŁOT));
+
+    forge.forceAddIngot(ITEM.ŻELAZO, 350);
+    action("kuj żelazo 350 uderz słabo uderz słabo uderz słabo uderz słabo");
+    test(forge.hasIngot(ITEM.ŻELAZO, 354));
+    action("kuj żelazo 354 uderz słabo uderz słabo uderz słabo uderz słabo uderz słabo");
+    assertSecretResponse();
+    testEqual(forge.amountOfIngots(), 1);
+    forge.resetIngots();
+    testEqual(forge.amountOfIngots(), 0);
+
+    action("buduj marmur marmur drewno drewno");
+    action("zbierz");
+    action("dodaj dom marmur", 2);
+    action("idź lewo");
+    action("zbierz", 2);
+    action("idź prawo");
+    action("dodaj dom drewno", 2);
+    test(cityTile.getConstruction(BUILDING.DOM).hasAllMaterials());
+    testEqual(cityTile.getConstruction(BUILDING.DOM).workRemaining(), 4);
+    action("pracuj dom");
+    testEqual(cityTile.getConstruction(BUILDING.DOM).workRemaining(), 2);
+    action("zostaw żelazny młot");
+    test(!player.items.hasItem(ITEM.ŻELAZNY_MŁOT));
+    action("pracuj dom");
+    testEqual(cityTile.getConstruction(BUILDING.DOM).workRemaining(), 1);
+    action("weź żelazny młot");
+    action("pracuj dom");
+    test(!cityTile.getConstruction(BUILDING.DOM));
+    test(cityTile.hasMultipleBuildings(BUILDING.DOM));
+
+    //Using an axe
+    forge.forceAddIngot(ITEM.ŻELAZO, 20);
+    testEqual(forge.amountOfIngots(), 1);
+    action("kuj żelazo 20 zwęź uderz słabo wygnij uklep");
+    test(forge.hasIngot(ITEM.ŻELAZO, 49));
+    action("kuj żelazo 49 uklep uderz mocno uderz mocno uderz mocno");
+    test(forge.hasIngot(ITEM.ŻELAZO, 376));
+    action("kuj żelazo 376 uklep uderz słabo uderz słabo zakończ");
+    testEqual(forge.amountOfIngots(), 0);
+    test(player.items.hasItem(ITEM.ŻELAZNY_TOPÓR));
+    test(discoveries.items.includes(ITEM.ŻELAZNY_TOPÓR));
+
+    action("idź lewo");
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 0);
+    action("zbierz");
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 2);
+    action("zostaw żelazny topór");
+    action("wyrzuć drewno", 2);
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 0);
+    action("zbierz");
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 1);
+    action("weź żelazny topór");
+    action("zbierz");
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 2); //We're limited by inventory size
+    action("wyrzuć drewno", 2);
+    action("zbierz");
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 2);
 
 
     console.log(`Ran ${testsRan} tests, ${testsPassed} passed.`);

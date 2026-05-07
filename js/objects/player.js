@@ -1,4 +1,4 @@
-import { STATE } from '../general/enums.js';
+import { STATE, BIOME, ITEM, ACTION } from '../general/enums.js';
 import ItemContainer from './itemContainer.js';
 import { BlueprintProject } from './miscObjects.js';
 
@@ -73,8 +73,19 @@ export default class Player {
         this.maxActions = 1 + extraActions;
     }
 
-    getActionStrength(action) {
-        return 1; //This will be expanded to add multipliers to some actions based on states/equipment
+    getActionStrength(action, biome) {
+        switch (action) {
+            case ACTION.ZBIERAJ:
+                if ([BIOME.YELLOW, BIOME.CYAN, BIOME.BLUE].includes(biome) && this.items.hasItem(ITEM.ŻELAZNY_KILOF)) return 2;
+                if ([BIOME.RED, BIOME.GREEN, BIOME.VIOLET].includes(biome) && this.items.hasItem(ITEM.ŻELAZNY_TOPÓR)) return 2;
+                return 1;
+            case ACTION.KUJ:
+            case ACTION.PRACUJ:
+                if (this.items.hasItem(ITEM.ŻELAZNY_MŁOT)) return 2;
+                else return 1;
+            default:
+                return 1;
+        }
     }
 
     hasBlueprintProject() {

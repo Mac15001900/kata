@@ -6,7 +6,6 @@ import { BUILDING_DATA } from "../../data/buildings.js";
 const MAX_FORGE_LEVEL = 1000;
 const VALID_MATERIALS = [ITEM.ŻELAZO];
 const BASE_ALLOWED_ACTIONS = 3;
-const IRON_HAMMER_BONUS = 3;
 export class Forge extends Building {
     constructor() {
         super(BUILDING_DATA.find(b => b.id === BUILDING.KUŹNIA));
@@ -48,9 +47,9 @@ export class Forge extends Building {
         return this.storedIngots.some(ingot => ingot.forgeLevel === value && ingot.material === material);
     }
 
-    canPerformActions(actions, player) {
+    canPerformActions(actions, player, actionStrength) {
         let amount = BASE_ALLOWED_ACTIONS;
-        if (player.items.hasItem(ITEM.ŻELAZNY_MŁOT)) amount += IRON_HAMMER_BONUS;
+        if (actionStrength > 1) amount += actionStrength - 1;
         return actions.filter(a => a !== FORGE_ACTION.ZAKOŃCZ).length <= amount;
     }
 
@@ -138,6 +137,10 @@ export class Forge extends Building {
 
     forceAddIngot(material, forgeLevel) {
         this.storedIngots.push(new Ingot(material, forgeLevel));
+    }
+
+    resetIngots() {
+        this.storedIngots = [];
     }
 }
 

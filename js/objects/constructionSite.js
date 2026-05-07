@@ -3,7 +3,6 @@
 export default class ConstructionSite {
     constructor(buildingData) {
         this.buildingData = buildingData;
-        this.materialsPlaced = [];
         this.materialsRemaining = [...buildingData.cost];
         this.workDone = 0;
         this.requiredWork = buildingData.cost.length;
@@ -15,7 +14,6 @@ export default class ConstructionSite {
 
     placeItem(item) {
         if (!this.needsItem(item)) return false;
-        this.materialsPlaced.push(item);
         this.materialsRemaining.splice(this.materialsRemaining.indexOf(item), 1);
         return true;
     }
@@ -44,7 +42,6 @@ export default class ConstructionSite {
 
     magicallyFinish() {
         this.workDone = this.requiredWork;
-        this.materialsPlaced = [...this.buildingData.cost];
         this.materialsRemaining = [];
     }
 }

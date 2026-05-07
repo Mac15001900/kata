@@ -105,6 +105,18 @@ export function printItemList(items) {
     return printable.slice(0, -1).join(', ') + ' i ' + printable.at(-1);
 }
 
+export function printItemLoot(items) {
+    if (items.length === 0) return "—";
+    let res = [];
+    while (items.length > 0) {
+        let newItem = items[0];
+        let amount = items.filter(item => item === newItem).length;
+        items = items.filter(item => item !== newItem)
+        res.push(`${amount}x ${printItem(newItem)}`);
+    }
+    return res.join(', ');
+}
+
 export function printifyInventory(list) {
     if (list.length === 0) return "—";
     let itemList = list.map(printItem).sort();

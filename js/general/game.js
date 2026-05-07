@@ -4,7 +4,7 @@ import Tile from "../objects/tile.js";
 import Board from "../objects/board.js";
 import Player from "../objects/player.js";
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
-import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, arraysEqual, printifyInventory, parseBuildingAndItems, getCraftingRecipe, printItemList, adjustWordPl } from "./utils.js";
+import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, arraysEqual, printifyInventory, parseBuildingAndItems, getCraftingRecipe, printItemList, printItemLoot, adjustWordPl } from "./utils.js";
 import fs from 'fs';
 import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING, FORGE_RESULT } from './enums.js';
 import { BIOME_DATA } from "../../data/biomes.js";
@@ -105,6 +105,7 @@ export class Game {
         let currentTile = this.board.get(player.x, player.y);
         let currentBiome = currentTile.biome;
         let bundle = new ParserHelperBundle(this, currentTile, player);
+        let actionStrength = player.getActionStrength(command, currentBiome);
 
         if (command !== ACTION.NONE) {
             this.checkCommandDiscovery(command, player, inputString.split(" ")[0]);
@@ -178,7 +179,7 @@ export class Game {
                 let { construction } = parseConstructionOnTile(options, bundle);
                 if (!construction.hasAllMaterials()) return { secret: `Ten cel nie potrzebuje jeszcze pracy.` };
 
-                construction.addWork(player.getActionStrength(ACTION.PRACUJ));
+                construction.addWork(actionStrength);
                 if (construction.isDone()) {
                     currentTile.updateConstruction();
                     return { respond: base + `Budowa zakończona sukcesem.` };
@@ -187,23 +188,29 @@ export class Game {
             }
 
             //#region -------------- Gathering actions --------------
-            case ACTION.SZUKAJ:
+            case ACTION.SZUKAJ: {
                 const lightLootPool = BIOME_DATA[currentBiome].searchLoot;
-                //TODO - check for appropriate tools to potentially apply bonuses
-                let newItem2 = lightLootPool[Math.floor(Math.random() * lightLootPool.length)];
-                player.addItem(newItem2);
-                this.checkItemDiscovery(newItem2, player);
-                return { respond: base + "Znajdujesz 1x " + capitalize(newItem2) };
-            case ACTION.ZBIERAJ:
+                let items = [];
+                for (let i = 0; i < actionStrength; i++) {
+                    items.push(lightLootPool[Math.floor(Math.random() * lightLootPool.length)]);
+                }
+                this.giveItems(items, player);
+                return { respond: base + `Znajdujesz ${printItemLoot(items)}.` };
+            }
+            case ACTION.ZBIERAJ: {
                 if (player.availableCapacity() <= 0) {
                     return { respond: base + " Niestety, nie masz w ekwipunku miejsca na żadną znalezioną rzecz." };
                 }
                 const heavyLootPool = BIOME_DATA[currentBiome].harvestLoot;
-                //TODO - check for appropriate tools to potentially apply bonuses
-                let newItem = heavyLootPool[Math.floor(Math.random() * heavyLootPool.length)];
-                this.checkItemDiscovery(newItem, player);
-                player.addItem(newItem);
-                return { respond: base + `Zdobywasz 1x ${capitalize(newItem)}.` };
+                let items = [];
+                let amountGathered = Math.min(actionStrength, player.availableCapacity());
+                for (let i = 0; i < amountGathered; i++) {
+                    items.push(heavyLootPool[Math.floor(Math.random() * heavyLootPool.length)]);
+                }
+                this.giveItems(items, player);
+                let fullNotification = amountGathered < actionStrength ? "\nUdałoby ci się zebrać więcej, ale nie masz już miejsca w ekwipunku." : "";
+                return { respond: base + `Zbierasz ${printItemLoot(items)}.${fullNotification}` };
+            }
             case ACTION.KOP:
                 return { respond: base + "TODO" };
 
@@ -364,7 +371,7 @@ export class Game {
                 if (!forge.hasEnoughFuel()) throw new ActionException("Nie ma tu żadnego paliwa. Dorzuć najpierw coś palnego.");
                 if (forge.amountOfIngots() === 0) throw new ActionException("Nie ma tu żadnych sztabek do obróbki. Dodaj najpierw jakiś metal.");
                 if (!forge.hasIngot(item, number)) throw new ActionException("Nie ma tu takiej sztabki. Dostępne sztabki:\n" + forge.printIngots());
-                if (!forge.canPerformActions(forgeActions, player)) throw new ActionException("Nie jesteś w stanie wykonać aż tylu czynności naraz.");
+                if (!forge.canPerformActions(forgeActions, player, actionStrength)) throw new ActionException("Nie jesteś w stanie wykonać aż tylu czynności naraz.");
 
                 let result = forge.applySeriesOfActions(forgeActions, number);
                 switch (result.type) {
@@ -454,6 +461,14 @@ export class Game {
             selected -= options[k];
         }
         console.error("Logical error in pickWeighted");
+    }
+
+    giveItems(items, player) {
+        if (typeof items === 'string') items = [items];
+        for (let i = 0; i < items.length; i++) {
+            player.items.addItem(items[i]);
+            this.checkItemDiscovery(items[i], player);
+        }
     }
 
     eatItem(item, player) {
