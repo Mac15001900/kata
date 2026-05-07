@@ -9,7 +9,7 @@ import fs from 'fs';
 import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING, FORGE_RESULT } from './enums.js';
 import { BIOME_DATA } from "../../data/biomes.js";
 import { ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber, parseForgeActions } from "./parsers.js";
-import { getFuelValue, getFoodValue, isHeavyItem, getFoodEatingResult } from "../../data/items.js";
+import { getFuelValue, getFoodValue, isHeavyItem, getFoodEatingResult } from "../../data/itemUtils.js";
 
 export class Game {
     constructor(opts) {

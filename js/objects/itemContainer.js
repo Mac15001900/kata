@@ -1,4 +1,4 @@
-import { isHeavyItem } from '../../data/items.js';
+import { isHeavyItem } from '../../data/itemUtils.js';
 import { printifyInventory } from '../general/utils.js';
 
 

@@ -1,4 +1,4 @@
-import { getFuelValue } from '../../data/items.js';
+import { getFuelValue } from '../../data/itemUtils.js';
 
 //#region Building
 export default class Building {

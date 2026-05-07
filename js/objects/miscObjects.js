@@ -3,7 +3,7 @@ import { getRandomLetters } from '../general/utils.js';
 import { BIOME_DATA } from '../../data/biomes.js';
 import { BIOME, ACTION, DIRECTION, STATE, BUILDING } from '../general/enums.js';
 import { capitalize, stringsEqual, printItem, printifyInventory } from '../general/utils.js';
-import { isHeavyItem, getFuelValue } from '../../data/items.js';
+import { isHeavyItem, getFuelValue } from '../../data/itemUtils.js';
 import { ActionException } from '../general/parsers.js';
 
 
