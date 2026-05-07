@@ -2,7 +2,7 @@ import { BIOME, ITEM, ACTION } from "../js/general/enums.js"
 
 /**
  * @typedef {Object} ItemData
- * @property {ITEM} id
+ * @property {string} id
  * @property {boolean} isHeavy
  * @property {boolean} isEdible
  * @property {number} foodValue

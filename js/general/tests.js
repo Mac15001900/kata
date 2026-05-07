@@ -64,6 +64,7 @@ export function bigGameTest() {
     testEqual(discoveries.buildings.length, 0);
     testEqual(discoveries.recipes.length, 0);
 
+    //#region Movement
     //Basic movement
     testPlayerPosition(player, 0, 0);
     action("idź góra");
@@ -78,6 +79,49 @@ export function bigGameTest() {
     action("idź lewo"); //This would go off the board - no movement should happen
     testPlayerPosition(player, 0, 0);
     action("idź dkfjghdf"); //Testing an invalid direction
+    assertSecretResponse();
+    testPlayerPosition(player, 0, 0);
+
+    //Multi-tile movement
+    action("idź góra góra");
+    testPlayerPosition(player, 0, 2);
+    action("idź góra góra góra");
+    assertSecretResponse();
+    testPlayerPosition(player, 0, 2);
+    action("idź góra prawo");
+    testPlayerPosition(player, 1, 3);
+    action("idź lewo lewo");
+    assertSecretResponse();
+    testPlayerPosition(player, 1, 3);
+    action("idź dół");
+    testPlayerPosition(player, 1, 2);
+    action("idź lewo góra");
+    testPlayerPosition(player, 0, 3);
+    action("idź lewo prawo");
+    assertSecretResponse();
+    testPlayerPosition(player, 0, 3);
+    action("idź prawo lewo");
+    assertSecretResponse(true);
+    testPlayerPosition(player, 0, 3);
+    action("idź prawo dól");
+    testPlayerPosition(player, 1, 2);
+    action("idź lewo dół");
+    testPlayerPosition(player, 0, 1);
+    action("idź dół lewo");
+    assertSecretResponse();
+    testPlayerPosition(player, 0, 1);
+    action("idź lewo dół");
+    assertSecretResponse();
+    testPlayerPosition(player, 0, 1);
+    action("idź dół");
+    testPlayerPosition(player, 0, 0);
+    action("idź lewo lewo");
+    assertSecretResponse();
+    testPlayerPosition(player, 0, 0);
+    action("idź lewo dół");
+    assertSecretResponse();
+    testPlayerPosition(player, 0, 0);
+    action("idź dół dół");
     assertSecretResponse();
     testPlayerPosition(player, 0, 0);
 

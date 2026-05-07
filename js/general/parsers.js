@@ -68,6 +68,9 @@ export function parseDirection(strings) {
     if (direction === DIRECTION.NONE) throw new ActionException(`${strings[0]} nie jest rozpoznawalnym kierunkiem.`);
     return { direction, strings: strings.slice(1) };
 }
+export function parseDirections(strings) {
+    return { directions: strings.map(s => parseDirection([s]).direction), strings: [] };
+}
 
 export function parseNumber(strings) {
     if (strings.length === 0) throw new ActionException("Wybierz liczbę.");

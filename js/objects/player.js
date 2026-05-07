@@ -12,6 +12,7 @@ export default class Player {
         this.discordId = discordId;
 
         this.maxActions = 1;
+        this.baseSpeed = 2;
         this.usedActions = 0;
 
         this.items = new ItemContainer(2);
@@ -87,6 +88,10 @@ export default class Player {
             }
         });
         return strength;
+    }
+
+    getSpeed() {
+        return this.baseSpeed; //There will be other things that influence this
     }
 
     hasBlueprintProject() {

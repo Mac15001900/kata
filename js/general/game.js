@@ -8,7 +8,7 @@ import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, a
 import fs from 'fs';
 import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING, FORGE_RESULT } from './enums.js';
 import { BIOME_DATA } from "../../data/biomes.js";
-import { ParserHelperBundle, ActionException, parseDirection, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber, parseForgeActions } from "./parsers.js";
+import { ParserHelperBundle, ActionException, parseDirections, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber, parseForgeActions } from "./parsers.js";
 import ItemData from "../../data/items.js";
 
 export class Game {
@@ -49,12 +49,16 @@ export class Game {
     processAction(inputString, userId) {
         let player = this.getPlayerById(userId);
         let playerActions = player.usedActions;
+        let playerX = player.x;
+        let playerY = player.y;
         let res = null;
         try {
-            res = this.processInternalAction(inputString, userId);
+            res = this.processInternalAction(inputString, player);
         } catch (e) {
             if (e instanceof ActionException) {
-                player.usedActions = playerActions; //Reset any used up action points
+                player.usedActions = playerActions; //Reset position and any used up action points
+                player.x = playerX;
+                player.y = playerY;
                 res = { secret: ":cross_mark: " + e.message };
             } else throw e
         }
@@ -76,12 +80,11 @@ export class Game {
     /**
      * Processes an action from a user. Can throw ParsingException if parsing user's input fails.
      * @param {String} inputString The full string the user typed for the /akcja command
-     * @param {Snowflake} userId Discord user ID
+     * @param {Player} player Player that's performing the action
      * @throws {ActionException} If the command cannot be parsed or the action fails for other reason
      * @returns {Object} Responses to the user for the action. Usually involving either the 'response' or 'secret' fields, but sometimes both.
      */
-    processInternalAction(inputString, userId) {
-        let player = this.getPlayerById(userId);
+    processInternalAction(inputString, player) {
         if (!player) return { secret: "Jeśli widzisz tą wiadomość, to znaczy, że o ile masz dostęp do tego kanału, z jakiegoś powodu nie ma cię w grze.\nJeśli jesteś kadronem, to normalne.\nJeśli jesteś uczestnikiem, to coś tu poszło nie tak. Daj znać Maćkowi." };
 
         let command = getCommandFromString(inputString.split(" ")[0]);
@@ -292,16 +295,24 @@ export class Game {
 
             //#region -------------- Movement actions --------------
             case ACTION.IDŹ: {
-                let { direction } = parseDirection(options);
-                let newPos = moveCoordinates(direction, player.x, player.y);
-                if (this.board.has(newPos)) {
-                    player.x = newPos[0];
-                    player.y = newPos[1];
-                    this.board.updateOnePlayer(player);
-                    return { respond: base + success };
-                } else {
-                    throw new ActionException("Nie jesteś w stanie przemieścić się w tym kierunku.");
+                let startX = player.x;
+                let startY = player.y;
+                let { directions } = parseDirections(options);
+                if (directions.length > player.getSpeed()) throw new ActionException("Twoja prędkość jest zbyt niska, żeby przemieścić się tak daleko.");
+                for (let i = 0; i < directions.length; i++) {
+                    const direction = directions[i];
+
+                    let newPos = moveCoordinates(direction, player.x, player.y);
+                    if (this.board.has(newPos)) {
+                        player.x = newPos[0];
+                        player.y = newPos[1];
+                    } else {
+                        throw new ActionException("Nie jesteś w stanie przemieścić się w tym kierunku.");
+                    }
                 }
+                this.board.updateOnePlayer(player);
+                if (player.x === startX && player.y === startY) return { respond: base + "Przemieszczasz się do... tego samego sektora." };
+                return { respond: base + "Przemieszczasz się do innego sektora." };
             }
             case ACTION.PRZYZWIJ:
                 return { respond: base + "TODO" };
