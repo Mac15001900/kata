@@ -19,6 +19,7 @@ import { Game } from './js/general/game.js';
 import { BIOME, ACTION, DIRECTION } from './js/general/enums.js';
 import { BUILDING_DATA } from './data/buildings.js';
 import { bigGameTest } from './js/general/tests.js';
+import Point from './js/objects/point.js';
 
 // Create an express app
 const app = express();
@@ -250,8 +251,8 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                     });
                     return null;
                 case 'spawnHouse':
-                    let spawnTile = game.board.get(game.getPlayerById(member.user.id).x, game.getPlayerById(member.user.id).y);
-                    if (options[0] && options[1]) spawnTile = game.board.get(parseInt(options[0]), parseInt(options[1]));
+                    let spawnTile = game.board.get(game.getPlayerById(member.user.id).position);
+                    if (options[0] && options[1]) spawnTile = game.board.get(new Point(parseInt(options[0]), parseInt(options[1])));
                     spawnTile.startConstruction(BUILDING_DATA.find(b => b.name === 'Dom'));
                     spawnTile.construction[0].magicallyFinish();
                     spawnTile.updateConstruction();

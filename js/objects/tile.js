@@ -7,9 +7,8 @@ import { Forge } from '../mechanics/forge.js';
 
 //#region Tile
 export default class Tile {
-    constructor(x, y, biome, buildings = []) {
-        this.x = x;
-        this.y = y;
+    constructor(position, biome, buildings = []) {
+        this.position = position.copy();
         this.biome = biome;
         this.players = [];
         this.buildings = buildings;
@@ -18,7 +17,7 @@ export default class Tile {
     }
 
     getPlayersHere(allPLayers) {
-        return allPLayers.filter(player => player.x === this.x && player.y === this.y);
+        return allPLayers.filter(player => player.position.equals(this.position));
     }
 
     printTile(movingEntities) {

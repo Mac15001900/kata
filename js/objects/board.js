@@ -7,12 +7,8 @@ export default class Board {
         this.height = tiles.length;
     }
 
-    has(x, y) {
-        if (typeof x === 'object') {
-            y = x[1];
-            x = x[0];
-        }
-        return !(x < 0 || x >= this.width || y < 0 || y >= this.height);
+    has(point) {
+        return !(point.x < 0 || point.x >= this.width || point.y < 0 || point.y >= this.height);
     }
 
     /**
@@ -21,11 +17,9 @@ export default class Board {
      * @param {Number} [y] Y coordinate
      * @returns {Tile | undefined}
      */
-    get(x, y) {
-        if (typeof x === 'object') {
-            y = x[1];
-            x = x[0];
-        }
+    get(point) {
+        let x = point.x;
+        let y = point.y;
         console.assert(x !== undefined && y !== undefined, "Trying to get a tile with undefined coordinates");
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) return undefined;
         return this.tiles[y][x];

@@ -10,6 +10,7 @@ import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING, FORGE_RESULT } from '.
 import { BIOME_DATA } from "../../data/biomes.js";
 import { ParserHelperBundle, ActionException, parseDirections, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber, parseForgeActions } from "./parsers.js";
 import ItemData from "../../data/items.js";
+import Point from "../objects/point.js";
 
 export class Game {
     constructor(opts) {
@@ -50,16 +51,14 @@ export class Game {
     processAction(inputString, userId) {
         let player = this.getPlayerById(userId);
         let playerActions = player.usedActions;
-        let playerX = player.x;
-        let playerY = player.y;
+        let playerPosition = player.position.copy();
         let res = null;
         try {
             res = this.processInternalAction(inputString, player);
         } catch (e) {
             if (e instanceof ActionException) {
                 player.usedActions = playerActions; //Reset position and any used up action points
-                player.x = playerX;
-                player.y = playerY;
+                player.position.set(playerPosition);
                 res = { secret: ":cross_mark: " + e.message };
             } else throw e
         }
@@ -106,7 +105,7 @@ export class Game {
         let freeAction = "\n\nᵀᵃ ᵃᵏᶜʲᵃ ʲᵉˢᵗ ᵈᵃʳᵐᵒʷᵃ";
         player.remainingActions -= cost;
 
-        let currentTile = this.board.get(player.x, player.y);
+        let currentTile = this.board.get(player.position);
         let currentBiome = currentTile.biome;
         let bundle = new ParserHelperBundle(this, currentTile, player);
         let actionStrength = player.getActionStrength(command, currentBiome);
@@ -290,20 +289,19 @@ export class Game {
 
             //#region -------------- Movement actions --------------
             case ACTION.IDŹ: {
-                let startX = player.x;
-                let startY = player.y;
+                let pos = player.position.copy();
+                let startingPos = pos.copy();
                 let { directions } = parseDirections(options);
                 if (directions.length > player.getSpeed()) throw new ActionException("Twoja prędkość jest zbyt niska, żeby przemieścić się tak daleko.");
                 for (let i = 0; i < directions.length; i++) {
-                    let newPos = moveCoordinates(directions[i], player.x, player.y);
-                    if (this.board.has(newPos)) {
-                        player.x = newPos[0];
-                        player.y = newPos[1];
+                    pos.changeInDirection(directions[i]);
+                    if (this.board.has(pos)) {
+                        player.position.set(pos);
                     } else {
                         throw new ActionException("Nie jesteś w stanie przemieścić się w tym kierunku.");
                     }
                 }
-                if (player.x === startX && player.y === startY) return { respond: base + "Przemieszczasz się do... tego samego sektora." };
+                if (pos.equals(startingPos)) return { respond: base + "Przemieszczasz się do... tego samego sektora." };
                 return { respond: base + "Przemieszczasz się do innego sektora." };
             }
             case ACTION.PRZYZWIJ:
@@ -415,7 +413,7 @@ export class Game {
     //#region -------------- Other functions --------------
     generateBoard(width, height) {
         let tiles = Array.from({ length: height }, (_, r) =>
-            Array.from({ length: width }, (_, c) => this.makeRandomTile(c, r)));
+            Array.from({ length: width }, (_, c) => this.makeRandomTile(new Point(c, r))));
         return new Board(tiles);
     }
 
@@ -425,7 +423,7 @@ export class Game {
         let width = mapJson.width;
         let height = mapJson.height;
         let tiles = Array.from({ length: height }, (_, y) =>
-            Array.from({ length: width }, (_, x) => new Tile(x, y, mapJson.data[mapJson.data.length - (y + 1) * width + x])));
+            Array.from({ length: width }, (_, x) => new Tile(new Point(x, y), mapJson.data[mapJson.data.length - (y + 1) * width + x])));
         return new Board(tiles);
     }
 
@@ -436,7 +434,7 @@ export class Game {
         if (x === undefined) x = Math.floor(Math.random() * this.config.mapWidth);
         if (y === undefined) y = Math.floor(Math.random() * this.config.mapHeight);
         let name = member.nick || member.user.username || "?!?!?!?";
-        let playerObj = new Player(name, x, y, member.id);
+        let playerObj = new Player(name, new Point(x, y), member.id);
         this.players.push(playerObj);
     }
 
@@ -457,9 +455,9 @@ export class Game {
         return this.players;
     }
 
-    makeRandomTile(x, y) {
+    makeRandomTile(pos) {
         let biome = this.pickWeighted(this.config.biomeWeights);
-        return new Tile(x, y, biome);
+        return new Tile(pos, biome);
     }
 
     pickWeighted(options) {

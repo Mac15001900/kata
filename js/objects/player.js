@@ -5,10 +5,9 @@ import ItemData from '../../data/items.js';
 
 //#region Player
 export default class Player {
-    constructor(fullName, startingX, startingY, discordId) {
+    constructor(fullName, startingPoint, discordId) {
         this.name = this.makeNameShorthand(fullName);
-        this.x = startingX;
-        this.y = startingY;
+        this.position = startingPoint.copy();
         this.discordId = discordId;
 
         this.maxActions = 1;
@@ -135,12 +134,7 @@ export default class Player {
         return this.blueprintProject;
     }
 
-    moveTo(x, y) {
-        if (typeof x === 'object') {
-            y = x[1];
-            x = x[0];
-        }
-        this.x = x;
-        this.y = y;
+    moveTo(point) {
+        this.position.set(point);
     }
 }

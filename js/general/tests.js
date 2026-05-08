@@ -23,8 +23,8 @@ function testEqual(a, b, errorMessage) {
 }
 
 function testPlayerPosition(player, x, y) {
-    test(player.x === x, `Player's X is ${player.x}. Expected ${x}.`);
-    test(player.y === y, `Player's Y is ${player.y}. Expected ${y}.`);
+    test(player.position.x === x, `Player's X is ${player.x}. Expected ${x}.`);
+    test(player.position.y === y, `Player's Y is ${player.y}. Expected ${y}.`);
 }
 
 function action(string, repeat = 1) {
@@ -203,9 +203,9 @@ export function bigGameTest() {
     test(!player.items.canFitItemList([ITEM.BIOMASA, ITEM.BIOMASA, ITEM.MARMUR]));
 
     //#region Home construction
-    let cityTile = game.board.get(player.x, player.y);
-    testEqual(cityTile.x, player.x, "Tile position incorrect");
-    testEqual(cityTile.y, player.y, "Tile position incorrect");
+    let cityTile = game.board.get(player.position);
+    testEqual(cityTile.position.x, player.position.x, "Tile position incorrect");
+    testEqual(cityTile.position.y, player.position.y, "Tile position incorrect");
 
     testEqual(cityTile.construction.length, 0, "Construction started unexpctedly");
     action("buduj");
@@ -282,9 +282,8 @@ export function bigGameTest() {
 
     //Building 5 houses on (0,1)    
     action("idź lewo");
-    let secondCityTile = game.board.get(player.x, player.y);
-    testEqual(secondCityTile.x, player.x, "Tile position incorrect");
-    testEqual(secondCityTile.y, player.y, "Tile position incorrect");
+    let secondCityTile = game.board.get(player.position);
+    test(secondCityTile.position.equals(player.position), "Tile position incorrect");
     testPlayerPosition(player, 0, 1);
 
     for (let i = 0; i < 5; i++) {

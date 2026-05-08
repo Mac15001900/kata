@@ -1,11 +1,13 @@
 import ItemContainer from "./itemContainer.js";
 
 export default class Vehicle {
-    constructor(data, x, y) {
+    constructor(data, position) {
         this.data = data;
         this.items = new ItemContainer(data.capacity);
+        this.position = position.copy();
         this.players = [];
         this.driver = null;
+
         this.speed = data.speed;
         this.canStoreItems = data.canStoreItems;
         this.canStorePassangers = data.canStorePassangers;
@@ -54,14 +56,9 @@ export default class Vehicle {
         this.items.changeCapacity(this.capacity - this.weightFromPlayers());
     }
 
-    moveTo(x, y) {
-        if (typeof x === 'object') {
-            y = x[1];
-            x = x[0];
-        }
-        this.x = x;
-        this.y = y;
-        this.players.forEach(p => p.moveTo(x, y));
+    moveTo(point) {
+        this.position.set(point);
+        this.players.forEach(p => p.moveTo(point));
     }
 
 
