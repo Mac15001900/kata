@@ -13,6 +13,7 @@ import { ITEM, BUILDING, STATE } from "../js/general/enums.js"
  * @property {number} [craftingSpeed]
  * @property {boolean} [canBeUsed]
  * @property {boolean} [unique]
+ * @property {number} [speedBonus]
  */
 
 /** @type {BuildingData[]} */
@@ -59,7 +60,16 @@ const BuildingData = [
         canCraft: true,
         fuelPerOperation: 1,
         unique: true,
+    }, {
+        id: BUILDING.DROGA,
+        name: "Droga",
+        cost: [ITEM.MARMUR],
+        speedBonus: 1,
     }
 ]
+
+BuildingData.get = function (id) {
+    return this.find(b => b.id === id);
+}
 
 export default BuildingData;

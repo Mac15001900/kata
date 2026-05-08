@@ -83,4 +83,8 @@ export default class Building {
         this.currentRecipe = null;
         return res;
     }
+
+    getSpeedBonus() {
+        return this.data.speedBonus || 0;
+    }
 }

@@ -289,19 +289,14 @@ export class Game {
 
             //#region -------------- Movement actions --------------
             case ACTION.IDŹ: {
-                let pos = player.position.copy();
-                let startingPos = pos.copy();
+                let startingPos = player.position.copy();
                 let { directions } = parseDirections(options);
-                if (directions.length > player.getSpeed()) throw new ActionException("Twoja prędkość jest zbyt niska, żeby przemieścić się tak daleko.");
-                for (let i = 0; i < directions.length; i++) {
-                    pos.changeInDirection(directions[i]);
-                    if (this.board.has(pos)) {
-                        player.position.set(pos);
-                    } else {
-                        throw new ActionException("Nie jesteś w stanie przemieścić się w tym kierunku.");
-                    }
-                }
-                if (pos.equals(startingPos)) return { respond: base + "Przemieszczasz się do... tego samego sektora." };
+                let path = new Path(this.board, player.position, directions);
+                if (directions.length > player.getSpeed() + path.getSpeedBonus())
+                    throw new ActionException("Twoja prędkość jest zbyt niska, żeby przemieścić się tak daleko.");
+                if (!path.isInBounds()) throw new ActionException("Nie jesteś w stanie przemieścić się w tym kierunku.");
+                player.position.set(path.getEnd());
+                if (player.position.equals(startingPos)) return { respond: base + "Przemieszczasz się do... tego samego sektora." };
                 return { respond: base + "Przemieszczasz się do innego sektora." };
             }
             case ACTION.PRZYZWIJ:

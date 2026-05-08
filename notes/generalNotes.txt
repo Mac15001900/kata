@@ -33,7 +33,7 @@ https://github.com/Automattic/node-canvas
 
 Running a server on a tablet - https://stackoverflow.com/questions/36632649/running-node-js-on-android#41514825
 
-Generate a dependency graph (in project folder):
+Generate a dependency graph (run in project folder):
     npx madge --extensions js --image notes/dependencyGraph.svg .
 
 Check for circular dependencies:
