@@ -38,3 +38,17 @@ Generate a dependency graph (run in project folder):
 
 Check for circular dependencies:
     npx madge -c . --warning
+
+
+Random error from Eris (within its onError handler):
+app.js:80 Error: 4000: Unknown error.
+    at Shard._onWSClose (Shard.js:2537:15)
+    at WebSocket.emit (node:events:508:28)
+    at WebSocket.emitClose (websocket.js:273:10)
+    at TLSSocket.socketOnClose (websocket.js:1346:15)
+    at TLSSocket.emit (node:events:520:35)
+    at node:net:346:12
+    at TCP.done (node:internal/tls/wrap:671:7)
+    at TCP.callbackTrampoline (node:internal/async_hooks:130:17)
+
+Try restarting Eris if it gets an error?

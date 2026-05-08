@@ -20,6 +20,10 @@ export default class Tile {
         return allPLayers.filter(player => player.position.equals(this.position));
     }
 
+    getVehiclesHere(allVehicles) {
+        return allVehicles.filter(vehicle => vehicle.position.equals(this.position));
+    }
+
     printTile(movingEntities) {
         let res = ["", "", "", ""];
         let players = this.getPlayersHere(movingEntities.players);

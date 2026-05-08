@@ -1,13 +1,16 @@
 import ItemContainer from "./itemContainer.js";
+import VehicleData from "../data/vehicles.js";
 
 export default class Vehicle {
-    constructor(data, position) {
+    constructor(id, position) {
+        let data = VehicleData[id];
         this.data = data;
         this.items = new ItemContainer(data.capacity);
         this.position = position.copy();
         this.players = [];
         this.driver = null;
 
+        this.id = data.id;
         this.speed = data.speed;
         this.canStoreItems = data.canStoreItems;
         this.canStorePassangers = data.canStorePassangers;
@@ -34,7 +37,11 @@ export default class Vehicle {
     }
 
     canDrive(player) {
-        return this.canEnter(player) && this.driver === null;
+        return this.canEnter(player) && !this.hasDriver();
+    }
+
+    hasDriver() {
+        return this.driver !== null;
     }
 
     addPlayer(player) {
@@ -52,8 +59,12 @@ export default class Vehicle {
     removePlayer(player) {
         if (this.driver === player) this.driver = null;
         this.players = this.players.filter(p => p !== player);
-        player.leaveVehicle();
         this.items.changeCapacity(this.capacity - this.weightFromPlayers());
+        player.leaveVehicle();
+    }
+
+    hasPlayer(player) {
+        return this.players.includes(player);
     }
 
     moveTo(point) {
@@ -61,8 +72,23 @@ export default class Vehicle {
         this.players.forEach(p => p.moveTo(point));
     }
 
+    getName() {
+        return this.data.name;
+    }
+
+    getMoveMessage() {
+        return this.data.moveMessage;
+    }
 
 
+    printInfo() {
+        let res = `${this.getName()}\nPojemność: ${this.getWeight()}/${this.capacity}\n\nPasażerowie (${this.weightFromPlayers()}):\n\n`;
+        if (this.players.length === 0) res += "—";
+        else res += this.players.map(p => p.getName() + ` (${p.getWeight()})`).join("\n");
+        res += "\n\n" + this.items.printItems();
+
+        return res;
+    }
 
 
 

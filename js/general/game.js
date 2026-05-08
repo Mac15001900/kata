@@ -3,14 +3,15 @@ import BuildingData from "../../data/buildings.js";
 import Tile from "../objects/tile.js";
 import Board from "../objects/board.js";
 import Player from "../objects/player.js";
-import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
+import { getCommandFromString, getDirectionFromString, getActionCost, canPerformActionAsVehicleDriver, canPerformActionAsVehiclePassenger } from "./data.js";
 import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, arraysEqual, printifyInventory, parseBuildingAndItems, getCraftingRecipe, printItemList, printItemLoot, adjustWordPl } from "./utils.js";
 import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING, FORGE_RESULT } from './enums.js';
 import BiomeData from "../../data/biomes.js";
-import { ParserHelperBundle, ActionException, parseDirections, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber, parseForgeActions } from "./parsers.js";
+import { ParserHelperBundle, ActionException, parseDirections, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber, parseForgeActions, parseVehicleOnTile } from "./parsers.js";
 import ItemData from "../../data/items.js";
 import Point from "../objects/point.js";
 import Path from "../objects/path.js";
+import Vehicle from "../objects/vehicle.js";
 
 export class Game {
     constructor(opts) {
@@ -112,6 +113,13 @@ export class Game {
 
         if (command !== ACTION.NONE) {
             this.checkCommandDiscovery(command, player, inputString.split(" ")[0]);
+            if (player.isInVehicle()) {
+                if (player.isDriver() && !canPerformActionAsVehicleDriver(command)) throw new ActionException("Nie możesz tego zrobić, gdy prowadisz pojazd. Musisz najpierw z niego wysiąść.");
+                else if (!canPerformActionAsVehiclePassenger(command)) {
+                    if (command === ACTION.IDŹ) throw new ActionException("Tylko kierowca może wykonać tą akcję.");
+                    else throw new ActionException("Nie możesz tego zrobić, gdy jesteś w pojeździe. Musisz najpierw z niego wysiąść.");
+                }
+            }
         }
 
         switch (command) {
@@ -142,14 +150,21 @@ export class Game {
                         this.checkRecipeDiscovery(recipe, player);
                         if (!building.hasEnoughFuel()) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić.\nChociaż masz wrażenie, że mogłoby to się udać przy większej temperaturze. Możesz trzeba tu najpierw dorzucić paliwa?" };
 
-                        if (!player.items.canSwapItems(recipe.input, recipe.output))
-                            throw new ActionException(`Nie masz miejsca na ${recipe.output.length === 1 ? "przedmiot, który" : "przedmioty, które"} próbujesz stworzyć.`);
+                        if (recipe.makesVehicle) {
+                            player.items.removeItemList(recipe.input);
+                            let vehicle = new Vehicle(recipe.output, player.position.copy())
+                            this.vehicles.push(vehicle);
+                            return { respond: base + `Budujesz ${vehicle.getName()}.` };
+                        } else {
+                            if (!player.items.canSwapItems(recipe.input, recipe.output))
+                                throw new ActionException(`Nie masz miejsca na ${recipe.output.length === 1 ? "przedmiot, który" : "przedmioty, które"} próbujesz stworzyć.`);
 
-                        player.items.removeItemList(recipe.input);
-                        this.giveItems(recipe.output, player);
-                        building.runOneCraft();
+                            player.items.removeItemList(recipe.input);
+                            this.giveItems(recipe.output, player);
+                            building.runOneCraft();
 
-                        return { respond: base + `Tworzysz:\n${printItemList(recipe.output)}.` };
+                            return { respond: base + `Tworzysz:\n${printItemList(recipe.output)}.` };
+                        }
                     } else {
                         throw new ActionException("Tego budynku nie da się użyć.");
                     }
@@ -292,12 +307,27 @@ export class Game {
                 let startingPos = player.position.copy();
                 let { directions } = parseDirections(options);
                 let path = new Path(this.board, player.position, directions);
-                if (directions.length > player.getSpeed() + path.getSpeedBonus())
-                    throw new ActionException("Twoja prędkość jest zbyt niska, żeby przemieścić się tak daleko.");
-                if (!path.isInBounds()) throw new ActionException("Nie jesteś w stanie przemieścić się w tym kierunku.");
-                player.position.set(path.getEnd());
-                if (player.position.equals(startingPos)) return { respond: base + "Przemieszczasz się do... tego samego sektora." };
-                return { respond: base + "Przemieszczasz się do innego sektora." };
+                if (!path.isInBounds()) throw new ActionException("Nie jesteś w stanie się tam przemieścić.");
+                if (player.isDriver()) {
+                    let vehicle = player.vehicle
+                    let speed = vehicle.speed;
+                    if (!vehicle.ignoresTerrain) vehicle += path.getSpeedBonus();
+                    if (vehicle.bannedBiomes.some(b => path.hasBiome(b))) throw new ActionException(`${vehicle.getName()} nie jest w stanie pokonać tego terenu.`);
+                    for (let i = 0; i < vehicle.needsBuildings.length; i++) {
+                        const buildingId = vehicle.needsBuildings[i];
+                        if (!path.allHasBuilding(buildingId)) throw new ActionException(`${vehicle.getName()} może przemieszczać się tylko po sektorach zawierających ${BuildingData.get(buildingId).getName()}.`);
+                    }
+                    vehicle.moveTo(path.getEnd());
+                    return { respond: base + `${vehicle.getMoveMessage()}${vehicle.position.equals(path.getEnd()) ? "... tego samego" : " innego"} sektora` };
+                } else {
+                    if (directions.length > player.getSpeed() + path.getSpeedBonus())
+                        throw new ActionException("Twoja prędkość jest zbyt niska, żeby przemieścić się tak daleko.");
+                    player.position.set(path.getEnd());
+                    if (player.position.equals(startingPos)) return { respond: base + "Przemieszczasz się do... tego samego sektora." };
+                    return { respond: base + "Przemieszczasz się do innego sektora." };
+                }
+
+
             }
             case ACTION.PRZYZWIJ:
                 return { respond: base + "TODO" };
@@ -386,17 +416,45 @@ export class Game {
             }
 
             //#region Vehicle actions
-            case ACTION.WSIĄDŹ:
-                return { respond: base + "TODO" };
-            case ACTION.WYSIĄDŹ:
-                return { respond: base + "TODO" };
-            case ACTION.WŁÓŻ:
-                return { respond: base + "TODO" };
-            case ACTION.WYJMIJ:
-                return { respond: base + "TODO" };
-            case ACTION.PROWADŹ:
-                return { respond: base + "TODO" };
+            case ACTION.WSIĄDŹ: {
+                let { vehicle } = parseVehicleOnTile(options, bundle);
+                if (!vehicle.canEnter(player)) throw new ActionException("Nie zmieścisz się w tym pojeździe.");
+                vehicle.addPlayer(player);
+                return { secret: `Wsiadasz. ${vehicle.getName()} ma jeszcze ${vehicle.getRemainingCapacity()} pojemności.` + freeAction };
+            }
+            case ACTION.WYSIĄDŹ: {
+                if (!player.isInVehicle()) throw new ActionException("Nie jesteś w żadnym pojeździe.");
+                player.leaveVehicle();
+                return { secret: "Wysiadasz" + freeAction };
+            }
+            case ACTION.WŁÓŻ: {
+                let { vehicle, strings } = parseVehicleOnTile(options, bundle);
+                let { item } = parsePlayerSingleItem(strings, bundle);
+                if (!vehicle.items.canFitItem(item)) throw new ActionException("Nie ma tu miejsca na ten przedmiot.");
 
+                player.removeItems(item);
+                vehicle.items.addItem(item);
+
+                return { secret: `Wkładasz 1x ${printItem(item)}. ${vehicle.getName()} ma jeszcze ${vehicle.getRemainingCapacity()} pojemności.` + freeAction };
+            }
+            case ACTION.WYJMIJ: {
+                let { vehicle, strings } = parseVehicleOnTile(options, bundle);
+                let { item } = parseSingleItem(strings, bundle);
+                if (!vehicle.items.hasItem(item)) throw new ActionException("Nie ma tu " + printItem(item));
+                if (!player.items.canFitItem(item)) throw new ActionException("Nie masz na to miejsca w ekwipunku.");
+
+                vehicle.items.removeItem(item);
+                this.giveItems([item], player);
+                return { secret: `Wyjmujesz 1x ${printItem(item)}. ${vehicle.getName()} ma teraz ${vehicle.getRemainingCapacity()} pojemności.` + freeAction };
+            }
+            case ACTION.PROWADŹ: {
+                let { vehicle } = parseVehicleOnTile(options, bundle);
+                if (!vehicle.canEnter(player)) throw new ActionException("Nie zmieścisz się w tym pojeździe.");
+                if (vehicle.hasDriver()) throw new ActionException("Ten pojazd ma już kierowcę.");
+                console.assert(vehicle.canDrive(player));
+                vehicle.addDriver(player);
+                return { secret: `Wsiadasz. ${vehicle.getName()} ma jeszcze ${vehicle.getRemainingCapacity()} pojemności.` + freeAction };
+            }
             default:
                 player.remainingActions += cost;
                 return { secret: "Coś poszło nie tak. Jeśli widzisz tą wiadomość, to akcja nie została rozpoznana. Daj znać Maćkowi." };

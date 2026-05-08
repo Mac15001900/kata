@@ -123,8 +123,10 @@ export default class ItemContainer {
         this.maxSize += amount;
     }
 
-    printItems() {
-        let res = `Ciężkie przedmioty (${this.heavyItems.length}/${this.maxSize}):\n\n`
+    printItems(hideCapacity) {
+        let res = '';
+        if (hideCapacity) res += `Ciężkie przedmioty (${this.heavyItems.length}):\n\n`
+        else res += `Ciężkie przedmioty (${this.heavyItems.length}/${this.maxSize}):\n\n`
         res += printifyInventory(this.heavyItems);
         res += `\n\nLekkie przedmioty:\n\n`;
         res += printifyInventory(this.lightItems);

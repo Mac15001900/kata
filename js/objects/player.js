@@ -12,7 +12,7 @@ export default class Player {
 
         this.maxActions = 1;
         this.baseSpeed = 2;
-        this.usedActions = 0;
+        this.usedActions = 0; //game.js currently affects remainingActions - fix that when adding limits
 
         this.items = new ItemContainer(2);
         this.states = [];
@@ -27,6 +27,10 @@ export default class Player {
         let words = fullName.split(' ').filter(s => s.length >= 2);
         if (words.length < 2 || words[0].length < 2 || words[1].length < 2) return "U-????";
         else return ("U-" + words[0][0] + words[0][1] + words[1][0] + words[1][1]).toUpperCase();
+    }
+
+    getName() {
+        return this.name;
     }
 
     availableCapacity() {
@@ -103,10 +107,12 @@ export default class Player {
     }
 
     enterVehicle(vehicle) {
+        if (!this.vehicle.hasPlayer(this)) this.vehicle.addPlayer(this);
         this.vehicle = vehicle;
     }
 
     leaveVehicle() {
+        if (this.vehicle.hasPlayer(this)) this.vehicle.removePlayer(this);
         this.vehicle = null;
     }
 

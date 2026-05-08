@@ -9,6 +9,8 @@ export default VehicleData;
 /**
  * @typedef {Object} VehicleData
  * @property {string} id
+ * @property {string} name
+ * @property {string} moveMessage
  * @property {number} speed
  * @property {boolean} canStoreItems
  * @property {boolean} canStorePassangers
@@ -19,6 +21,8 @@ export default VehicleData;
  */
 VehicleData[VEHICLE.WÓZ] = {
     id: VEHICLE.WÓZ,
+    name: "Wóz",
+    moveMessage: "Ciągniesz wóz do",
     speed: 1,
     canStoreItems: true,
     canStorePassangers: true,
@@ -30,6 +34,8 @@ VehicleData[VEHICLE.WÓZ] = {
 
 VehicleData[VEHICLE.PODUSZKOWIEC] = {
     id: VEHICLE.PODUSZKOWIEC,
+    name: "Poduszkowiec",
+    moveMessage: "Przelatujesz do",
     speed: 4,
     canStoreItems: true,
     canStorePassangers: true,
@@ -41,7 +47,9 @@ VehicleData[VEHICLE.PODUSZKOWIEC] = {
 
 VehicleData[VEHICLE.POCIĄG] = {
     id: VEHICLE.POCIĄG,
-    speed: 5,
+    name: "Pociąg",
+    moveMessage: "Dojeżdżasz do",
+    speed: 8,
     canStoreItems: true,
     canStorePassangers: true,
     capacity: 100,

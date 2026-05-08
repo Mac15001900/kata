@@ -169,7 +169,26 @@ function parseBuilding(string) {
     return BuildingData.find(b => stringsEqual(b.name, string));
 }
 
-//Verifiers
+export function parseVehicleOnTile(strings, bundle) {
+    if (strings.length === 0) throw new ActionException("Wybierz pojazd.");
+    let type = parseVehicle(strings[0]);
+    let available = bundle.getVehiclesOnTile().filter(v => v.id === type);
+    if (!type || available.length === 0) throw new ActionException("Nie ma tu takiego pojazdu.");
+    if (available.length === 1) {
+        return { vehicle: available[0], strings: strings.slice(1) };
+    } else {
+        let number = parseInt(strings[1]);
+        if (!isNaN(number)) throw new ActionException("Jest tu więcej niż jeden taki pojazd. Sprecyzuj numer.");
+        let vehicle = available[number - 1];
+        if (!vehicle) throw new ActionException("Nie ma takiego pojazdu o takim numerze.");
+        return { vehicle, strings: strings.slice(2) };
+    }
+
+}
+
+function parseVehicle(string) {
+    return VEHICLE[Object.keys(VEHICLE).find(key => stringsEqual(VEHICLE[key], string))];
+}
 
 /**
  * Checks if an input can be parsed with a given parser. Useful for commands where input can be
@@ -199,7 +218,7 @@ export function checkParser(parser, strings, bundle) {
  * The error's message will be displayed to the user instead of what the action would usually display.
  * 
  * Throwing this exception results in refunding the action cost - do *not* throw this after making
- * any changes to the game state.
+ * any other changes to the game state.
  */
 export class ActionException extends Error {
     constructor(message) {
@@ -219,5 +238,17 @@ export class ParserHelperBundle {
         this.game = game;
         this.tile = tile;
         this.player = player;
+    }
+
+    getAllPlayers() {
+        return this.game.players;
+    }
+
+    getPlayersOnTile() {
+        return this.tile.getPlayersHere(this.getAllPlayers());
+    }
+
+    getVehiclesOnTile() {
+        return this.tile.getVehicles(this.game.vehicles);
     }
 }
