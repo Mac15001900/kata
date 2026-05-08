@@ -265,30 +265,6 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                 case 'test':
                     if (bigGameTest()) return secretRespond(":white_check_mark: All tests ran. All tests successful.");
                     else return secretRespond(":x: All tests ran. Some tests failed. Details in console.");
-                case 'table':
-                    await (async () => {
-                        /*const data = Array.from({ length: 26 }, (_, r) =>
-                            // Array.from({ length: 20 }, (_, c) => `U-${r + 1}${c + 1}`)
-                            Array.from({ length: 20 }, (_, c) => `U-${getRandomLetters(4)}\nU-${getRandomLetters(4)}\n/\\/\\/\\/\\/\\\nCity 1\nHas a road`)
-                        );*/
-                        const players = makeRandomPlayers(85, 20, 26);
-                        const tiles = Array.from({ length: 26 }, (_, r) =>
-                            Array.from({ length: 20 }, (_, c) => new Tile(c, r, BIOME.RED)));
-                        tiles.forEach(row => row.forEach(t => t.updatePlayers(players)));
-                        const data = tiles.map(row => row.map(tile => tile.printTile()));
-                        const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
-                        fs.writeFileSync('tableThing.png', buffer);
-                    })();
-
-                    if (SHOW_TABLE_ON_DISCORD) {
-                        erisBot.createMessage(TEST_CHANNEL, {
-                            content: "Look at this map!"
-                        }, {
-                            name: "map.png",
-                            file: fs.readFileSync("./tableThing.png")
-                        });
-                    }
-                    return secretRespond("Sending table...");
                 case 'secret': return secretRespond("Only you can see this!");
                 case 'multi':
                     erisBot.createMessage(channel_id, "Wszyscy to widzą");
@@ -311,7 +287,7 @@ app.listen(PORT, () => {
 });
 
 async function updateMapFile() {
-    const data = game.board.printableData();
+    const data = game.board.printableData(game.getMovingEntities());
     const buffer = await renderTableImage(data, { width: 3000, height: 3900, font: '24px Arial', align: 'center', valign: 'top', cellWidth: 140, cellHeight: 140 });
     fs.writeFileSync('tableThing.png', buffer);
 }

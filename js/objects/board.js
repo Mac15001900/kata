@@ -35,8 +35,8 @@ export default class Board {
      * 
      * @returns An array of strings to be printed as the map. Reverses the order of rows, so y=0 will end up at the bottom.
      */
-    printableData() {
-        return this.tiles.map(row => row.map(tile => tile.printTile())).reverse();
+    printableData(movingEntities) {
+        return this.tiles.map(row => row.map(tile => tile.printTile(movingEntities))).reverse();
     }
 
     foreach(f) {
@@ -47,7 +47,4 @@ export default class Board {
         }
     }
 
-    updateOnePlayer(player) {
-        this.foreach(t => t.updateOnePlayer(player));
-    }
 }

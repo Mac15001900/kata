@@ -31,6 +31,7 @@ export class Game {
         // this.board = this.generateBoard(config.mapWidth, config.mapHeight);
         this.board = this.buildBoardFromFile(config.mapFile);
         this.players = [];
+        this.vehicles = [];
         this.discoveries = {
             items: [],
             commands: [],
@@ -142,16 +143,11 @@ export class Game {
                         this.checkRecipeDiscovery(recipe, player);
                         if (!building.hasEnoughFuel()) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić.\nChociaż masz wrażenie, że mogłoby to się udać przy większej temperaturze. Możesz trzeba tu najpierw dorzucić paliwa?" };
 
-                        //Calculate if we'll have space for the output after removing the input
-                        let currentSpace = player.items.getRemainingCapacity();
-                        let spaceAfterRemovingInput = currentSpace + recipe.input.filter(i => ItemData[i].isHeavy).length;
-                        let spaceAfterAddingOutput = spaceAfterRemovingInput - recipe.output.filter(i => ItemData[i].isHeavy).length;
-                        if (spaceAfterAddingOutput < 0)
+                        if (!player.items.canSwapItems(recipe.input, recipe.output))
                             throw new ActionException(`Nie masz miejsca na ${recipe.output.length === 1 ? "przedmiot, który" : "przedmioty, które"} próbujesz stworzyć.`);
 
                         player.items.removeItemList(recipe.input);
-                        player.items.addItemList(recipe.output);
-                        recipe.output.forEach(item => this.checkItemDiscovery(item, player));
+                        this.giveItems(recipe.output, player);
                         building.runOneCraft();
 
                         return { respond: base + `Tworzysz:\n${printItemList(recipe.output)}.` };
@@ -225,8 +221,7 @@ export class Game {
                 if (!player.items.canFitItem(item)) throw new ActionException("Nie masz na to miejsca w ekwipunku.");
 
                 currentTile.items.removeItem(item);
-                player.addItem(item);
-                this.checkItemDiscovery(item, player);
+                this.giveItems([item], player);
                 return { secret: `Zabierasz ${options.join(' ')}.` + freeAction };
             }
             case ACTION.WYRZUĆ: {
@@ -300,9 +295,7 @@ export class Game {
                 let { directions } = parseDirections(options);
                 if (directions.length > player.getSpeed()) throw new ActionException("Twoja prędkość jest zbyt niska, żeby przemieścić się tak daleko.");
                 for (let i = 0; i < directions.length; i++) {
-                    const direction = directions[i];
-
-                    let newPos = moveCoordinates(direction, player.x, player.y);
+                    let newPos = moveCoordinates(directions[i], player.x, player.y);
                     if (this.board.has(newPos)) {
                         player.x = newPos[0];
                         player.y = newPos[1];
@@ -310,7 +303,6 @@ export class Game {
                         throw new ActionException("Nie jesteś w stanie przemieścić się w tym kierunku.");
                     }
                 }
-                this.board.updateOnePlayer(player);
                 if (player.x === startX && player.y === startY) return { respond: base + "Przemieszczasz się do... tego samego sektora." };
                 return { respond: base + "Przemieszczasz się do innego sektora." };
             }
@@ -372,6 +364,7 @@ export class Game {
                 }
             }
             case ACTION.KUJ: {
+                //Note: we assume the forge will always produce light items; cases when produced items don't fit in player's inventory are not considered
                 let forge = currentTile.getBuilding(BUILDING.KUŹNIA);
                 if (!forge) throw new ActionException("Tej akcji możesz użyć tylko na polu z kuźnią.");
                 let { item, strings: s2 } = parseSingleItem(options, bundle);
@@ -390,16 +383,27 @@ export class Game {
                     case FORGE_RESULT.FAILED_FINISH:
                         return { respond: base + `Nie udało ci się stworzyć żadnego przedmiotu.\nNowy poziom wykucia tej sztabki to ${result.ingot.forgeLevel}.` };
                     case FORGE_RESULT.CREATED_ITEM:
-                        player.items.addItem(result.item);
-                        this.checkItemDiscovery(result.item, player);
+                        this.giveItems(result.item, player);
                         return { respond: base + `Wykuwasz 1x ${printItem(result.item)}.` };
                     case FORGE_RESULT.BROKEN:
                         let scrap = result.ingot.getScrap();
-                        player.items.addItem(ITEM.KAWAŁKI_ŻELAZA);
-                        this.checkItemDiscovery(scrap, player);
+                        this.giveItems(scrap, player);
                         return { respond: base + `Sztabka pęka od zbyt intensywnych uderzeń.\nZyskujesz 1x ` + printItem(scrap) };
                 }
             }
+
+            //#region Vehicle actions
+            case ACTION.WSIĄDŹ:
+                return { respond: base + "TODO" };
+            case ACTION.WYSIĄDŹ:
+                return { respond: base + "TODO" };
+            case ACTION.WŁÓŻ:
+                return { respond: base + "TODO" };
+            case ACTION.WYJMIJ:
+                return { respond: base + "TODO" };
+            case ACTION.PROWADŹ:
+                return { respond: base + "TODO" };
+
             default:
                 player.remainingActions += cost;
                 return { secret: "Coś poszło nie tak. Jeśli widzisz tą wiadomość, to akcja nie została rozpoznana. Daj znać Maćkowi." };
@@ -434,7 +438,6 @@ export class Game {
         let name = member.nick || member.user.username || "?!?!?!?";
         let playerObj = new Player(name, x, y, member.id);
         this.players.push(playerObj);
-        this.board.get(x, y).updatePlayers(this.players);
     }
 
     /**
@@ -559,6 +562,8 @@ export class Game {
         return true;
     }
 
-
+    getMovingEntities() {
+        return { players: this.players, vehicles: this.vehicles };
+    }
 
 }

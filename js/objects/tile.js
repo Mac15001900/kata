@@ -17,26 +17,18 @@ export default class Tile {
         this.items = new ItemContainer(0);
     }
 
-    updatePlayers(players) {
-        this.players = players.filter(p => p.x === this.x && p.y === this.y);
+    getPlayersHere(allPLayers) {
+        return allPLayers.filter(player => player.x === this.x && player.y === this.y);
     }
 
-    updateOnePlayer(player) {
-        if (player.x === this.x && player.y === this.y) {
-            if (!this.players.includes(player)) this.players.push(player);
-        } else {
-            let index = this.players.indexOf(player);
-            if (index > -1) this.players.splice(index, 1);
-        }
-    }
-
-    printTile() {
+    printTile(movingEntities) {
         let res = ["", "", "", ""];
-        if (this.players.length > 2) {
-            res[0] = `U x ${this.players.length}`;
+        let players = this.getPlayersHere(movingEntities.players);
+        if (players.length > 2) {
+            res[0] = `U x ${players.length}`;
         } else {
-            if (this.players[0]) res[0] = this.players[0].name;
-            if (this.players[1]) res[1] = this.players[1].name;
+            if (players[0]) res[0] = players[0].name;
+            if (players[1]) res[1] = players[1].name;
         }
         // res[2] = `[🏗 🏗 🏗]`;
         if (this.construction.length === 1) res[2] = `[${this.construction[0].getName()}]`;

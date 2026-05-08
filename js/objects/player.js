@@ -91,7 +91,15 @@ export default class Player {
     }
 
     getSpeed() {
-        return this.baseSpeed; //There will be other things that influence this
+        let res = this.baseSpeed;
+        this.items.asList().forEach(item => {
+            res += ItemData[item].speedBonus;
+        });
+        return res;
+    }
+
+    getWeight() {
+        return 1 + this.items.getWeight();
     }
 
     hasBlueprintProject() {
