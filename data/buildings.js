@@ -1,13 +1,28 @@
 
-import { ITEM, BUILDING } from "../js/general/enums.js"
+import { ITEM, BUILDING, STATE } from "../js/general/enums.js"
 
-export const BUILDING_DATA = [
+/**
+ * @typedef {Object} BuildingData
+ * @property {string} id
+ * @property {string} name
+ * @property {ITEM[]} cost
+ * @property {number} [storageCapacity]
+ * @property {STATE[]} [buffsOnRest]
+ * @property {boolean} [canCraft]
+ * @property {number} [fuelPerOperation]
+ * @property {number} [craftingSpeed]
+ * @property {boolean} [canBeUsed]
+ * @property {boolean} [unique]
+ */
+
+/** @type {BuildingData[]} */
+const BuildingData = [
     {
         id: BUILDING.DOM,
         name: "Dom",
         cost: [ITEM.DREWNO, ITEM.DREWNO, ITEM.MARMUR, ITEM.MARMUR],
         storageCapacity: 4,
-        buffsOnRest: [[Buffer.RESTED, 4, 4]], //Buff, duration, max people to apply to
+        buffsOnRest: [[STATE.RESTED, 4, 4]], //Buff, duration, max people to apply to
     }, {
         id: BUILDING.MAGAZYN,
         name: "Magazyn",
@@ -46,3 +61,5 @@ export const BUILDING_DATA = [
         unique: true,
     }
 ]
+
+export default BuildingData;

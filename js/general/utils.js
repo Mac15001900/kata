@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { BIOME, ACTION, DIRECTION, ITEM, BUILDING } from './enums.js';
-import { BUILDING_DATA } from '../../data/buildings.js';
-import { RECIPES } from '../../data/crafting.js';
+import BuildingData from "../../data/buildings.js";
+import RecipeData from '../../data/crafting.js';
 
 let lastAllUsersRequests = {};
 let cachedMembers = {};
@@ -173,7 +173,7 @@ export function arraysEqual(ar, br) {
 }
 
 export function parseBuilding(string) {
-    return BUILDING_DATA.find(b => stringsEqual(b.name, string));
+    return BuildingData.find(b => stringsEqual(b.name, string));
 }
 
 /**
@@ -202,11 +202,11 @@ export function parseBuildingAndItems(string) {
 }
 
 export function getBuildingData(buildingType) {
-    return BUILDING_DATA.find(b => b.id === buildingType);
+    return BuildingData.find(b => b.id === buildingType);
 }
 
 export function getCraftingRecipe(ingredients, buildingId) {
-    return RECIPES.find(r => arraysEqual(r.input, ingredients) && r.building === buildingId);
+    return RecipeData.find(r => arraysEqual(r.input, ingredients) && r.building === buildingId);
 }
 
 export function adjustWordPl(amount, singular, nominative, genitive) {

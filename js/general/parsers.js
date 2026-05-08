@@ -1,7 +1,7 @@
 import { ITEM, BUILDING, DIRECTION, FORGE_ACTION, ACTION } from "./enums.js";
 import { getDirectionFromString } from "./data.js";
 import { stringsEqual } from "./utils.js";
-import { BUILDING_DATA } from "../../data/buildings.js";
+import BuildingData from "../../data/buildings.js";
 
 /**
  * Parses an array of items. Will always consume the entire remaining input
@@ -166,7 +166,7 @@ export function parseSingleBuilding(strings) {
 }
 
 function parseBuilding(string) {
-    return BUILDING_DATA.find(b => stringsEqual(b.name, string));
+    return BuildingData.find(b => stringsEqual(b.name, string));
 }
 
 //Verifiers

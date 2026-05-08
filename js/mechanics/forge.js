@@ -1,14 +1,14 @@
 import { ExtraMath } from "../general/utils.js";
 import { ITEM, FORGE_ACTION, FORGE_RESULT, BUILDING } from "../general/enums.js";
 import Building from "../objects/building.js";
-import { BUILDING_DATA } from "../../data/buildings.js";
+import BuildingData from "../../data/buildings.js";
 
 const MAX_FORGE_LEVEL = 1000;
 const VALID_MATERIALS = [ITEM.ŻELAZO];
 const BASE_ALLOWED_ACTIONS = 3;
 export class Forge extends Building {
     constructor() {
-        super(BUILDING_DATA.find(b => b.id === BUILDING.KUŹNIA));
+        super(BuildingData.find(b => b.id === BUILDING.KUŹNIA));
         this.storedIngots = [];
     }
 

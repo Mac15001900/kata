@@ -1,4 +1,4 @@
-import { BIOME_DATA } from '../../data/biomes.js';
+import BiomeData from '../../data/biomes.js';
 import ItemContainer from './itemContainer.js';
 import ConstructionSite from './constructionSite.js';
 import Building from './building.js';
@@ -36,7 +36,7 @@ export default class Tile {
         if (this.buildings.length === 1) res[2] = this.buildings[0].getName();
         else if (this.buildings.length > 1) res[2] = `Osada (${this.buildings.length})`;
 
-        res[3] = BIOME_DATA[this.biome].mapString;
+        res[3] = BiomeData[this.biome].mapString;
         return res.join('\n');
     }
 

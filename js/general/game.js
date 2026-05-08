@@ -1,16 +1,16 @@
-import { BUILDING_DATA } from "../../data/buildings.js";
-// import { Tile, Board, Player } from "./objects/miscObjects.js"
+import fs from 'fs';
+import BuildingData from "../../data/buildings.js";
 import Tile from "../objects/tile.js";
 import Board from "../objects/board.js";
 import Player from "../objects/player.js";
 import { getCommandFromString, getDirectionFromString, getActionCost } from "./data.js";
 import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, arraysEqual, printifyInventory, parseBuildingAndItems, getCraftingRecipe, printItemList, printItemLoot, adjustWordPl } from "./utils.js";
-import fs from 'fs';
 import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING, FORGE_RESULT } from './enums.js';
-import { BIOME_DATA } from "../../data/biomes.js";
+import BiomeData from "../../data/biomes.js";
 import { ParserHelperBundle, ActionException, parseDirections, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber, parseForgeActions } from "./parsers.js";
 import ItemData from "../../data/items.js";
 import Point from "../objects/point.js";
+import Path from "../objects/path.js";
 
 export class Game {
     constructor(opts) {
@@ -186,7 +186,7 @@ export class Game {
 
             //#region -------------- Gathering actions --------------
             case ACTION.SZUKAJ: {
-                const lightLootPool = BIOME_DATA[currentBiome].searchLoot;
+                const lightLootPool = BiomeData[currentBiome].searchLoot;
                 let items = [];
                 for (let i = 0; i < actionStrength; i++) {
                     items.push(lightLootPool[Math.floor(Math.random() * lightLootPool.length)]);
@@ -198,7 +198,7 @@ export class Game {
                 if (player.availableCapacity() <= 0) {
                     return { respond: base + " Niestety, nie masz w ekwipunku miejsca na żadną znalezioną rzecz." };
                 }
-                const heavyLootPool = BIOME_DATA[currentBiome].harvestLoot;
+                const heavyLootPool = BiomeData[currentBiome].harvestLoot;
                 let items = [];
                 let amountGathered = Math.min(actionStrength, player.availableCapacity());
                 for (let i = 0; i < amountGathered; i++) {
@@ -314,8 +314,8 @@ export class Game {
                 if (!options[0]) throw new ActionException("Wybierz, jakich materiałów chcesz użyć.");
                 let { items } = parseItemList(options, bundle);
 
-                for (let i = 0; i < BUILDING_DATA.length; i++) {
-                    let data = BUILDING_DATA[i];
+                for (let i = 0; i < BuildingData.length; i++) {
+                    let data = BuildingData[i];
                     if (arraysEqual(data.cost, items)) {
                         if (currentTile.getConstruction(data.id)) throw new ActionException("Tu już powstaje taki budynek.");
                         if (data.unique && currentTile.hasBuilding(data.id)) throw new ActionException("Taki budynek może być w danym miejscu tylko jeden.");
@@ -347,7 +347,7 @@ export class Game {
                     player.removeItems(items[0]);
                     player.removeItems(items[1]);
 
-                    let candidates = BUILDING_DATA.
+                    let candidates = BuildingData.
                         filter(b => this.isBuildingBlueprintable(b)).
                         filter(b => b.cost.includes(items[0]) && b.cost.includes(items[1]));
 
@@ -549,7 +549,7 @@ export class Game {
     /**
      * Checks if a building is discoverable via blueprint projects, i.e.
      * it hasn't already been discovered and all its ingredients are discovered.
-     * @param {Object} building A building data object from BUILDING_DATA
+     * @param {Object} building A building data object from BuildingData
      * @returns  True iff the building can be discovered this way
      */
     isBuildingBlueprintable(building) {

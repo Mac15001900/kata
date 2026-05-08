@@ -1,7 +1,17 @@
-import { ITEM, BUILDING } from "../js/general/enums.js"
+import { ITEM, BUILDING, VEHICLE } from "../js/general/enums.js"
 
+/**
+ * @typedef {Object} RecipeData
+ * @property {string} name
+ * @property {ITEM[] | VEHICLE} output
+ * @property {ITEM[]} input
+ * @property {BUILDING} building
+ * @property {number} [craftingTime]
+ * @property {boolean} [makesVehicle]
+ */
 
-export const RECIPES = [
+/** @type {RecipeData[]} */
+const RecipeData = [
     {
         name: "Przetapianie rudy żelaza",
         output: [ITEM.ŻELAZO],
@@ -17,7 +27,7 @@ export const RECIPES = [
     {
         name: "Konstrukcja wozu",
         makesVehicle: true,
-        output: [ITEM.WÓZ],
+        output: VEHICLE.WÓZ,
         input: [ITEM.DESKA, ITEM.DESKA, ITEM.DREWNO, ITEM.DREWNO, ITEM.GWOŹDZIE],
         building: BUILDING.WARSZTAT,
     },
@@ -62,3 +72,5 @@ export const RECIPES = [
     },
 
 ]
+
+export default RecipeData;

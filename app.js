@@ -17,7 +17,7 @@ import Tile from './js/objects/tile.js';
 import Player from './js/objects/player.js';
 import { Game } from './js/general/game.js';
 import { BIOME, ACTION, DIRECTION } from './js/general/enums.js';
-import { BUILDING_DATA } from './data/buildings.js';
+import BuildingData from './data/buildings.js';
 import { bigGameTest } from './js/general/tests.js';
 import Point from './js/objects/point.js';
 
@@ -253,7 +253,7 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
                 case 'spawnHouse':
                     let spawnTile = game.board.get(game.getPlayerById(member.user.id).position);
                     if (options[0] && options[1]) spawnTile = game.board.get(new Point(parseInt(options[0]), parseInt(options[1])));
-                    spawnTile.startConstruction(BUILDING_DATA.find(b => b.name === 'Dom'));
+                    spawnTile.startConstruction(BuildingData.find(b => b.name === 'Dom'));
                     spawnTile.construction[0].magicallyFinish();
                     spawnTile.updateConstruction();
                     return secretRespond(`Spawned a house at ${options[0]}, ${options[1]}`);

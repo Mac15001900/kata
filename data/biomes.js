@@ -1,8 +1,21 @@
 import { BIOME, ITEM } from "../js/general/enums.js"
 
-export const BIOME_DATA = {}
+/**
+ * @type {Object.<string, BiomeData>}
+ */
+const BiomeData = {}
 
-BIOME_DATA[BIOME.RED] = {
+/**
+ * @typedef {Object} BiomeData
+ * @property {number} id
+ * @property {string} heart
+ * @property {string} mapString
+ * @property {string} lookDescription
+ * @property {ITEM[]} harvestLoot
+ * @property {ITEM[]} searchLoot
+ * @property {ITEM[]} digLoot
+ */
+BiomeData[BIOME.RED] = {
     id: BIOME.RED,
     heart: ':heart:',
     mapString: "♣♣♣♣♣♣",
@@ -12,7 +25,7 @@ BIOME_DATA[BIOME.RED] = {
     digLoot: [],
 }
 
-BIOME_DATA[BIOME.ORANGE] = {
+BiomeData[BIOME.ORANGE] = {
     id: BIOME.ORANGE,
     heart: ':orange_heart:',
     mapString: "--M--M--",
@@ -23,7 +36,7 @@ BIOME_DATA[BIOME.ORANGE] = {
 }
 
 
-BIOME_DATA[BIOME.YELLOW] = {
+BiomeData[BIOME.YELLOW] = {
     id: BIOME.YELLOW,
     heart: ':yellow_heart:',
     mapString: "___----___",
@@ -33,7 +46,7 @@ BIOME_DATA[BIOME.YELLOW] = {
     digLoot: [],
 }
 
-BIOME_DATA[BIOME.GREEN] = {
+BiomeData[BIOME.GREEN] = {
     id: BIOME.GREEN,
     heart: ':green_heart:',
     mapString: "└—┘~└—┘",
@@ -43,7 +56,7 @@ BIOME_DATA[BIOME.GREEN] = {
     digLoot: [],
 }
 
-BIOME_DATA[BIOME.CYAN] = {
+BiomeData[BIOME.CYAN] = {
     id: BIOME.CYAN,
     heart: ':light_blue_h:eart',
     mapString: "∆__∆__∆",
@@ -53,7 +66,7 @@ BIOME_DATA[BIOME.CYAN] = {
     digLoot: [],
 }
 
-BIOME_DATA[BIOME.BLUE] = {
+BiomeData[BIOME.BLUE] = {
     id: BIOME.BLUE,
     heart: ':blue_heart:',
     mapString: "__I__I__",
@@ -63,7 +76,7 @@ BIOME_DATA[BIOME.BLUE] = {
     digLoot: [],
 }
 
-BIOME_DATA[BIOME.VIOLET] = {
+BiomeData[BIOME.VIOLET] = {
     id: BIOME.VIOLET,
     heart: ':purple_heart:',
     mapString: ".T.TT.T.",
@@ -72,3 +85,5 @@ BIOME_DATA[BIOME.VIOLET] = {
     searchLoot: [ITEM.TĘCZOWY_KWIAT, ITEM.ŚWIECĄCY_KAMIEŃ],
     digLoot: [],
 }
+
+export default BiomeData;
