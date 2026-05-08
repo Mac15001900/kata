@@ -85,10 +85,6 @@ export default class ItemContainer {
         else return this.heavyItems.length + this.lightItems.length;
     }
 
-    getRemainingCapacity() {
-        return this.maxSize - this.heavyItems.length;
-    }
-
     canFitItem(item) {
         if (this.maxSize === 0) return false; //If there is no storage at all, we can't even store light items
         return this.isHeavyItem(item) ? this.getRemainingCapacity() > 0 : true;
@@ -97,6 +93,21 @@ export default class ItemContainer {
     canFitItemList(items) {
         let heavyItems = items.filter(this.isHeavyItem);
         return this.getRemainingCapacity() >= heavyItems.length;
+    }
+
+    canSwapItems(removed, added) {
+        let testContainer = new ItemContainer(this.maxSize);
+        testContainer.addItemList(this.asList());
+        testContainer.removeItemList(removed);
+        return testContainer.canFitItemList(added);
+    }
+
+    getWeight() {
+        return this.heavyItems.length;
+    }
+
+    getRemainingCapacity() {
+        return this.maxSize - this.getWeight();
     }
 
     getMaxCapacity() {

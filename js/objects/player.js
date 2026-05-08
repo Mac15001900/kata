@@ -21,6 +21,7 @@ export default class Player {
         this.mana = 0;
 
         this.blueprintProject = null;
+        this.vehicle = null;
     }
 
     makeNameShorthand(fullName) {
@@ -102,6 +103,22 @@ export default class Player {
         return 1 + this.items.getWeight();
     }
 
+    enterVehicle(vehicle) {
+        this.vehicle = vehicle;
+    }
+
+    leaveVehicle() {
+        this.vehicle = null;
+    }
+
+    isInVehicle() {
+        return this.vehicle !== null;
+    }
+
+    isDriver() {
+        return this.vehicle && this.vehicle.driver === this;
+    }
+
     hasBlueprintProject() {
         return this.blueprintProject !== null;
     }
@@ -116,5 +133,14 @@ export default class Player {
 
     getBlueprintProject() {
         return this.blueprintProject;
+    }
+
+    moveTo(x, y) {
+        if (typeof x === 'object') {
+            y = x[1];
+            x = x[0];
+        }
+        this.x = x;
+        this.y = y;
     }
 }

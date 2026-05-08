@@ -37,6 +37,12 @@ export const ACTION = Object.freeze({
     TWÓRZ: 41,
     PROJEKTUJ: 42,
     KUJ: 43,
+
+    WSIĄDŹ: 50,
+    WYSIĄDŹ: 51,
+    WŁÓŻ: 52,
+    WYJMIJ: 53,
+    PROWADŹ: 54,
 });
 
 export const DIRECTION = Object.freeze({
@@ -121,6 +127,9 @@ export const BUILDING = Object.freeze({
     FARMA: 4,
     WARSZTAT: 5,
     KUŹNIA: 6,
+
+    DROGA: 10,
+    TORY: 11,
     TEST: 42,
 });
 
@@ -145,4 +154,11 @@ export const FORGE_RESULT = Object.freeze({
     FAILED_FINISH: 2,
     CREATED_ITEM: 3,
     BROKEN: 4
+});
+
+export const VEHICLE = Object.freeze({
+    NONE: "",
+    WÓZ: "wóz",
+    PODUSZKOWIEC: "poduszkowiec",
+    POCIĄG: "pociąg",
 });

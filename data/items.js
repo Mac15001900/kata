@@ -14,20 +14,25 @@ import { BIOME, ITEM, ACTION } from "../js/general/enums.js"
  * @property {number} actionBonusStrength
  * @property {Array} actionBonusBiomes
  * @property {boolean} actionBonusStacks
+ * @property {number} speedModifier
  */
 const DEFAULT_ITEM = {
     id: null,
     isHeavy: false,
+
     isEdible: false,
     foodValue: 0,
     foodMagicValue: 0, //This field is not yet used
     foodMaxMP: 0, //This field is not yet used
     foodEatingResultItems: [],
     fuelValue: 0,
+
     actionBonusActions: [],
     actionBonusStrength: 1,
     actionBonusBiomes: [BIOME.VOID, BIOME.RED, BIOME.ORANGE, BIOME.YELLOW, BIOME.GREEN, BIOME.CYAN, BIOME.BLUE, BIOME.VIOLET],
     actionBonusStacks: false,
+
+    speedModifier: 0,
 
 };
 

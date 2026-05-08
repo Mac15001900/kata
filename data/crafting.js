@@ -7,7 +7,21 @@ export const RECIPES = [
         output: [ITEM.ŻELAZO],
         input: [ITEM.RUDA_ŻELAZA, ITEM.RUDA_ŻELAZA],
         building: BUILDING.PIEC,
+    }, {
+        name: "Proste deski",
+        output: [ITEM.DESKA],
+        input: [ITEM.DREWNO],
+        building: BUILDING.WARSZTAT,
     },
+    //Vehicles
+    {
+        name: "Konstrukcja wozu",
+        makesVehicle: true,
+        output: [ITEM.WÓZ],
+        input: [ITEM.DESKA, ITEM.DESKA, ITEM.DREWNO, ITEM.DREWNO, ITEM.GWOŹDZIE],
+        building: BUILDING.WARSZTAT,
+    },
+
     //Farm growing
     {
         name: "Uprawa pomarańczy",

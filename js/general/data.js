@@ -17,11 +17,11 @@ export function getCommandFromString(string) {
     s[ACTION.WYRZUĆ] = 'q wyrzuć porzuć odrzuć pozbądź';
     s[ACTION.DODAJ] = 'dodaj połóż dołóż';
     s[ACTION.ZJEDZ] = 'zjedz jedz spożyj';
-    s[ACTION.ZOSTAW] = 'zostaw odłóż zmagazynuj magazynuj przechowaj włóż';
+    s[ACTION.ZOSTAW] = 'zostaw odłóż zmagazynuj magazynuj przechowaj';
     s[ACTION.DAJ] = 'daj podaj przekaż';
     s[ACTION.DORZUĆ] = 'dorzuć dosyp';
 
-    s[ACTION.IDŹ] = 'idź idx chodź';
+    s[ACTION.IDŹ] = 'idź idx chodź jedź';
     s[ACTION.PRZYZWIJ] = 'przyzwij przyzywaj przywołaj sprowadź';
     s[ACTION.TELEPORTUJ] = 'teleportuj teleportacja';
 
@@ -29,6 +29,12 @@ export function getCommandFromString(string) {
     s[ACTION.TWÓRZ] = 'twórz stwórz zrób';
     s[ACTION.PROJEKTUJ] = 'projektuj zaprojektuj projekt';
     s[ACTION.KUJ] = 'kuj wykuj';
+
+    s[ACTION.WSIĄDŹ] = "wsiądź wsiadaj";
+    s[ACTION.WYSIĄDŹ] = "wysiądź wysiadaj";
+    s[ACTION.WŁÓŻ] = "włóż wkładaj";
+    s[ACTION.WYJMIJ] = "wyjmij wyjmuj";
+    s[ACTION.PROWADŹ] = "prowadź kieruj pokieruj steruj";
 
     for (let key in s) {
         if (removePolishCharacters(s[key]).split(' ').includes(testString)) return Number(key);
@@ -53,4 +59,12 @@ export function getDirectionFromString(string) {
         if (removePolishCharacters(s[key]).split(' ').includes(testString)) return Number(key);
     }
     return DIRECTION.NONE;
+}
+
+export function canPerformActionAsVehiclePassenger(action) {
+    return [ACTION.WYSIĄDŹ, ACTION.EKWIPUNEK].includes(action);
+}
+
+export function canPerformActionAsVehicleDriver(action) {
+    return canPerformActionAsVehiclePassenger(action) || action === ACTION.IDŹ;
 }
