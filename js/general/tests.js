@@ -1,5 +1,5 @@
 import { Game } from "./game.js";
-import { ITEM, BUILDING, STATE, ACTION } from "./enums.js";
+import { ITEM, BUILDING, STATE, ACTION, VEHICLE } from "./enums.js";
 import ItemData from "../../data/items.js";
 
 
@@ -37,9 +37,14 @@ function action(string, repeat = 1) {
     return res;
 }
 
-function assertSecretResponse(flip = false) {
-    if (flip) test(actionResult && !actionResult.secret && actionResult.respond, "Didn't get a public response when expected. Got a secret response: " + actionResult.secret);
-    else test(actionResult && actionResult.secret && !actionResult.respond, "Didn't get a secret response when expected. Got a public response: " + actionResult.respond);
+const ERROR_START = ":cross_mark:";
+function assertError() {
+    test(actionResult && actionResult.secret && !actionResult.respond && actionResult.secret.startsWith(ERROR_START), `Didn't get an error response when expected. Got P: ${actionResult.respond}| S: ${actionResult.secret}`);
+}
+
+function assertPublicResponse(flip = false) {
+    if (flip) test(actionResult && actionResult.secret && !actionResult.respond, "Didn't get a secret response when expected. Got a public response: " + actionResult.respond);
+    else test(actionResult && !actionResult.secret && actionResult.respond, "Didn't get a public response when expected. Got a secret response: " + actionResult.secret);
 }
 
 export function bigGameTest() {
@@ -79,50 +84,50 @@ export function bigGameTest() {
     action("idź lewo"); //This would go off the board - no movement should happen
     testPlayerPosition(player, 0, 0);
     action("idź dkfjghdf"); //Testing an invalid direction
-    assertSecretResponse();
+    assertError();
     testPlayerPosition(player, 0, 0);
 
     //Multi-tile movement
     action("idź góra góra");
     testPlayerPosition(player, 0, 2);
     action("idź góra góra góra");
-    assertSecretResponse();
+    assertError();
     testPlayerPosition(player, 0, 2);
     action("idź góra prawo");
     testPlayerPosition(player, 1, 3);
     action("idź lewo lewo");
-    assertSecretResponse();
+    assertError();
     testPlayerPosition(player, 1, 3);
     action("idź dół");
     testPlayerPosition(player, 1, 2);
     action("idź lewo góra");
     testPlayerPosition(player, 0, 3);
     action("idź lewo prawo");
-    assertSecretResponse();
+    assertError();
     testPlayerPosition(player, 0, 3);
     action("idź prawo lewo");
-    assertSecretResponse(true);
+    assertPublicResponse();
     testPlayerPosition(player, 0, 3);
     action("idź prawo dól");
     testPlayerPosition(player, 1, 2);
     action("idź lewo dół");
     testPlayerPosition(player, 0, 1);
     action("idź dół lewo");
-    assertSecretResponse();
+    assertError();
     testPlayerPosition(player, 0, 1);
     action("idź lewo dół");
-    assertSecretResponse();
+    assertError();
     testPlayerPosition(player, 0, 1);
     action("idź dół");
     testPlayerPosition(player, 0, 0);
     action("idź lewo lewo");
-    assertSecretResponse();
+    assertError();
     testPlayerPosition(player, 0, 0);
     action("idź lewo dół");
-    assertSecretResponse();
+    assertError();
     testPlayerPosition(player, 0, 0);
     action("idź dół dół");
-    assertSecretResponse();
+    assertError();
     testPlayerPosition(player, 0, 0);
 
     //#region Item collecion 
@@ -375,7 +380,7 @@ export function bigGameTest() {
     action("zbierz");
     action("zbierz");
     action("użyj dom marmur marmur");
-    assertSecretResponse();
+    assertError();
     testEqual(cityTile.construction.length, 0, "Weird construction from nowhere");
     action("buduj marmur marmur");
     testEqual(cityTile.construction.length, 1, "Construction failed to start");
@@ -395,13 +400,13 @@ export function bigGameTest() {
 
     //Failing to use it
     action("użyj");
-    assertSecretResponse();
+    assertError();
     action("użyj piec");
-    assertSecretResponse();
+    assertError();
     action("użyj piec ruda żelaza pomarańcza");
-    assertSecretResponse();
+    assertError();
     action("użyj piec ruda żelaza ruda żelaza");
-    assertSecretResponse();
+    assertError();
 
     //Harvesting iron ore
     action("idź prawo");
@@ -412,7 +417,7 @@ export function bigGameTest() {
     action("idź lewo");
     action("użyj piec ruda żelaza ruda żelaza");
     testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 2);
-    assertSecretResponse(true);
+    assertPublicResponse();
 
     action("zostaw ruda żelaza");
     testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 1);
@@ -423,18 +428,19 @@ export function bigGameTest() {
     action("zbierz");
     action("idź prawo");
     action("dorzuć");
-    assertSecretResponse();
+    assertError();
     action("dorzuć piec");
-    assertSecretResponse();
+    assertError();
     action("dorzuć piec szkło");
-    assertSecretResponse();
+    assertError();
     action("dorzuć piec ruda żelaza");
-    assertSecretResponse();
+    assertError();
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 1);
     action("dorzuć piec drewno");
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 0);
     testEqual(furnace.operationsAvailable(), 1);
     action("dorzuć piec drewno"); //Fails - we don't have any more wood at this point
+    assertError();
     testEqual(furnace.operationsAvailable(), 1);
 
     //Adding fuel from storage
@@ -511,14 +517,14 @@ export function bigGameTest() {
 
     //#region Eating
     action("zjedz");
-    assertSecretResponse();
+    assertError();
     test(discoveries.commands.includes(ACTION.ZJEDZ));
     action("zjedz tęczowy kwiat");
-    assertSecretResponse();
+    assertError();
     action("zjedz jagody");
-    assertSecretResponse();
+    assertError();
     action("zjedz kjsfghdfg");
-    assertSecretResponse();
+    assertError();
 
     action("idź prawo");
     let i = 0;
@@ -538,7 +544,7 @@ export function bigGameTest() {
 
     action("zbierz");
     action("zjedz grzyb");
-    assertSecretResponse();
+    assertError();
     action("wyrzuć grzyb");
     test(discoveries.items.includes(ITEM.GRZYB));
 
@@ -560,9 +566,9 @@ export function bigGameTest() {
     testEqual(player.maxMana, 1);
 
     action("zjedz tęczowy kwiat");
-    assertSecretResponse();
+    assertError();
     action("zjedz jagody");
-    assertSecretResponse();
+    assertError();
 
     //#region Blueprint Projects
     //We'll be making BUILDING.TEST ('Testowy pałac z wielu słów'), with a cost of:
@@ -572,34 +578,34 @@ export function bigGameTest() {
     testPlayerPosition(player, 1, 1);
     testEqual(discoveries.buildings.length, 2);
     action("projektuj");
-    assertSecretResponse();
+    assertError();
     test(discoveries.commands.includes(ACTION.PROJEKTUJ));
     action("projektuj dlfghh");
-    assertSecretResponse();
+    assertError();
     action("projektuj drewno");
-    assertSecretResponse();
+    assertError();
     action("projektuj drewno drewno");
-    assertSecretResponse();
+    assertError();
     action("projektuj drewno marmur");
-    assertSecretResponse();
+    assertError();
 
     testEqual(player.items.getRemainingCapacity(), 2);
     action("zbierz");
     action("zbierz");
     action("projektuj marmur marmur");
-    assertSecretResponse();
+    assertError();
     action("wyrzuć marmur");
 
     test(!player.hasBlueprintProject());
     test(player.items.hasItem(ITEM.MARMUR));
     let { respond: firstProjectResponse } = action("projektuj marmur nasiona jagód");
     test(!player.items.hasItem(ITEM.MARMUR));
-    assertSecretResponse(true);
+    assertPublicResponse();
     test(player.hasBlueprintProject());
     action("projektuj");
-    assertSecretResponse();
+    assertError();
     let { respond: secondProjectResponse } = action("projektuj marmur nasiona jagód");
-    assertSecretResponse(true);
+    assertPublicResponse();
     test(firstProjectResponse !== secondProjectResponse, "Project creation and continuation should give different responses");
 
     let countCorrect = (response => response.respond ? response.respond.split(':').filter(s => s === "green_square").length : "No response at all");
@@ -618,11 +624,11 @@ export function bigGameTest() {
     test(discoveries.buildings.includes(BUILDING.TEST));
     test(!player.hasBlueprintProject());
     action("projektuj marmur nasiona jagód tęczowy kwiat marmur marmur grzyb");
-    assertSecretResponse();
+    assertError();
 
     //#region Forging
     action("kuj");
-    assertSecretResponse();
+    assertError();
 
     action("buduj marmur marmur marmur żelazo żelazo");
     testEqual(cityTile.construction.length, 1);
@@ -635,7 +641,7 @@ export function bigGameTest() {
     testEqual(cityTile.construction.length, 0);
     test(cityTile.hasBuilding(BUILDING.KUŹNIA));
     action("buduj marmur marmur marmur żelazo żelazo");
-    assertSecretResponse(); //Can only have 1 forge per tile
+    assertError(); //Can only have 1 forge per tile
     let forge = cityTile.getForge();
     test(forge);
     testEqual(forge.getId(), BUILDING.KUŹNIA);
@@ -647,13 +653,13 @@ export function bigGameTest() {
     testEqual(cityTile.items.getItemAmount(ITEM.ŻELAZO), 1);
 
     action("dodaj kuźnia");
-    assertSecretResponse();
+    assertError();
     action("dodaj kuźnia żelazo");
     testEqual(forge.amountOfIngots(), 3);
     let forgeLevel = forge.storedIngots[0].forgeLevel;
     test(forge.hasIngot(ITEM.ŻELAZO, forgeLevel));
     action(`kuj żelazo ${forgeLevel} uderz słabo`);
-    assertSecretResponse();
+    assertError();
 
     action("idź lewo");
     action("zbierz");
@@ -665,14 +671,14 @@ export function bigGameTest() {
     test(forge.hasEnoughFuel());
     testEqual(forge.operationsAvailable(), 1);
     action(`kuj żelazo 999 uderz słabo`);
-    assertSecretResponse();
+    assertError();
     testEqual(forge.operationsAvailable(), 1);
     action(`kuj żelazo ${forgeLevel} uderz słabo`);
-    assertSecretResponse(true);
+    assertPublicResponse();
     test(forge.hasIngot(ITEM.ŻELAZO, forgeLevel + 1));
     testEqual(forge.operationsAvailable(), 0);
     action(`kuj żelazo ${forgeLevel + 1} uderz słabo`);
-    assertSecretResponse();
+    assertError();
 
     for (let i = 0; i < 400; i++) {
         player.items.addItemList([ITEM.DREWNO]);
@@ -694,7 +700,7 @@ export function bigGameTest() {
     action(`kuj żelazo 33 uderz słabo uderz słabo uderz słabo`);
     test(forge.hasIngot(ITEM.ŻELAZO, 36));
     action(`kuj żelazo 36 uderz słabo uderz słabo uderz słabo uderz słabo`);
-    assertSecretResponse();
+    assertError();
     action(`kuj żelazo 36 uderz średnio`);
     test(forge.hasIngot(ITEM.ŻELAZO, 45));
     action(`kuj żelazo 45 uderz słabo uderz średnio`);
@@ -803,7 +809,7 @@ export function bigGameTest() {
     //Using a hammer
     forge.forceAddIngot(ITEM.ŻELAZO, 350);
     action("kuj żelazo 350 uderz słabo uderz słabo uderz słabo uderz słabo");
-    assertSecretResponse();
+    assertError();
     action("kuj żelazo 350 uderz mocno zakończ");
     testEqual(forge.storedIngots.length, 0);
     test(player.items.hasItem(ITEM.ŻELAZNY_MŁOT));
@@ -813,7 +819,7 @@ export function bigGameTest() {
     action("kuj żelazo 350 uderz słabo uderz słabo uderz słabo uderz słabo");
     test(forge.hasIngot(ITEM.ŻELAZO, 354));
     action("kuj żelazo 354 uderz słabo uderz słabo uderz słabo uderz słabo uderz słabo");
-    assertSecretResponse();
+    assertError();
     testEqual(forge.amountOfIngots(), 1);
     forge.resetIngots();
     testEqual(forge.amountOfIngots(), 0);
@@ -868,6 +874,88 @@ export function bigGameTest() {
     action("wyrzuć drewno", 2);
     action("zbierz");
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 2);
+    action("idź prawo");
+
+    //#region Cart
+
+    //Using the command before a cart exists
+    action("prowadź");
+    assertError();
+    action("prowadź dfogjfklh");
+    assertError();
+    action("prowadź warsztat");
+    assertError();
+    action("prowadź wóz");
+    assertError();
+
+    //Build a workshop and a cart
+    testPlayerPosition(player, 1, 1);
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 2);
+    testEqual(cityTile.items.getRemainingCapacity(), 7);
+    action("buduj drewno drewno marmur marmur żelazo");
+    cityTile.construction[0].magicallyFinish();
+    cityTile.updateConstruction();
+    test(cityTile.hasBuilding(BUILDING.WARSZTAT));
+    action("użyj warsztat drewno");
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 1);
+    testEqual(player.items.getItemAmount(ITEM.DESKA), 1);
+    action("użyj warsztat drewno");
+    action("zostaw deska", 2);
+    action("idź lewo");
+    action("zbierz"); //We have an axe now
+    action("idź prawo");
+
+    forge.forceAddIngot(ITEM.ŻELAZO, 20);
+    action("kuj żelazo 20 uderz mocno uderz mocno zakończ"); //Screws are a small item, so we should get them even with a full inventory
+    testEqual(player.items.getItemAmount(ITEM.GWOŹDZIE), 1);
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 2);
+    testEqual(cityTile.items.getItemAmount(ITEM.DESKA), 2);
+    action("użyj warsztat drewno drewno deska deska gwoździe");
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 0);
+    testEqual(cityTile.items.getItemAmount(ITEM.DESKA), 0);
+    // test(discoveries.)
+    let cart = cityTile.getVehiclesHere(game.vehicles)[0];
+    test(cart);
+    testEqual(cart.id, VEHICLE.WÓZ);
+    test(cart.position.equals(player.position));
+    testEqual(cart.position.distanceTo(player.position), 0);
+
+    //Driving the cart
+    test(!player.isInVehicle());
+    test(!player.isDriver());
+    test(!cart.hasDriver());
+    test(cart.getRemainingCapacity() === cart.capacity);
+    action("prowadź wóz");
+    test(player.isInVehicle());
+    test(player.isDriver());
+    test(cart.hasDriver());
+    test(cart.getRemainingCapacity() < cart.capacity);
+
+    action("idź prawo");
+    testPlayerPosition(player, 2, 1);
+    test(cart.position.equals(player.position));
+    action("idź prawo prawo");
+    assertError();
+    testPlayerPosition(player, 2, 1);
+    test(cart.position.equals(player.position));
+    action("idź lewo", 2);
+    testPlayerPosition(player, 0, 1);
+    action("idź lewo");
+    assertError();
+    testPlayerPosition(player, 0, 1);
+    test(cart.position.equals(player.position));
+
+    action("wysiądź");
+    test(!player.isInVehicle());
+    test(!player.isDriver());
+    test(!cart.hasDriver());
+    test(cart.getRemainingCapacity() === cart.capacity);
+    action("idź prawo");
+    testPlayerPosition(player, 1, 1);
+    test(!cart.position.equals(player.position));
+    testEqual(cart.position.distanceTo(player.position), 1);
+    action("prowadź wóz");
+    assertError();
 
 
     console.log(`Ran ${testsRan} tests, ${testsPassed} passed.`);

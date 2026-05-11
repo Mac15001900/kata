@@ -107,7 +107,7 @@ export default class Player {
     }
 
     enterVehicle(vehicle) {
-        if (!this.vehicle.hasPlayer(this)) this.vehicle.addPlayer(this);
+        if (!vehicle.hasPlayer(this)) vehicle.addPlayer(this);
         this.vehicle = vehicle;
     }
 

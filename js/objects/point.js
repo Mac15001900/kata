@@ -2,6 +2,7 @@ import { DIRECTION } from "../general/enums.js";
 
 export default class Point {
     constructor(x, y) {
+        console.assert(!isNaN(x) && !isNaN(y), "Point coordinates must be numbers");
         this.x = x;
         this.y = y;
     }
@@ -17,6 +18,7 @@ export default class Point {
     changeInDirection(direction, amount = 1) {
         this.x += (((direction + 2) % 3) - 1) * amount;
         this.y += ((Math.ceil(direction / 3) - 2)) * amount;
+        console.assert(!isNaN(this.x) && !isNaN(this.y), "changeInDirection produced invalid values");
     }
 
     copy() {

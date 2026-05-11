@@ -5,13 +5,14 @@ import Board from "../objects/board.js";
 import Player from "../objects/player.js";
 import { getCommandFromString, getDirectionFromString, getActionCost, canPerformActionAsVehicleDriver, canPerformActionAsVehiclePassenger } from "./data.js";
 import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, arraysEqual, printifyInventory, parseBuildingAndItems, getCraftingRecipe, printItemList, printItemLoot, adjustWordPl } from "./utils.js";
-import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING, FORGE_RESULT } from './enums.js';
+import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING, FORGE_RESULT, DISCOVERY_TYPE } from './enums.js';
 import BiomeData from "../../data/biomes.js";
 import { ParserHelperBundle, ActionException, parseDirections, parsePlayerItemList, parseSingleItem, parseItemList, parsePlayerSingleItem, parseBuildingOnTile, parseConstructionOnTile, checkParser, parseNumber, parseForgeActions, parseVehicleOnTile } from "./parsers.js";
 import ItemData from "../../data/items.js";
 import Point from "../objects/point.js";
 import Path from "../objects/path.js";
 import Vehicle from "../objects/vehicle.js";
+import VehicleData from '../../data/vehicles.js';
 
 export class Game {
     constructor(opts) {
@@ -39,6 +40,7 @@ export class Game {
             commands: [],
             buildings: [],
             recipes: [],
+            vehicles: [],
         }
         this.queuedDiscoveries = [];
     }
@@ -116,7 +118,7 @@ export class Game {
             this.checkCommandDiscovery(command, player, inputString.split(" ")[0]);
             if (player.isInVehicle()) {
                 if (player.isDriver() && !canPerformActionAsVehicleDriver(command)) throw new ActionException("Nie możesz tego zrobić, gdy prowadisz pojazd. Musisz najpierw z niego wysiąść.");
-                else if (!canPerformActionAsVehiclePassenger(command)) {
+                else if (!player.isDriver() && !canPerformActionAsVehiclePassenger(command)) {
                     if (command === ACTION.IDŹ) throw new ActionException("Tylko kierowca może wykonać tą akcję.");
                     else throw new ActionException("Nie możesz tego zrobić, gdy jesteś w pojeździe. Musisz najpierw z niego wysiąść.");
                 }
@@ -155,6 +157,7 @@ export class Game {
                             this.removeItems(recipe.input, player, storage);
                             let vehicle = new Vehicle(recipe.output, player.position.copy())
                             this.vehicles.push(vehicle);
+                            this.checkVehicleDiscovery(vehicle.id, player);
                             return { respond: base + `Budujesz ${vehicle.getName()}.` };
                         } else {
                             if (!player.items.canSwapItems(recipe.input, recipe.output, storage))
@@ -313,15 +316,16 @@ export class Game {
                 if (!path.isInBounds()) throw new ActionException("Nie jesteś w stanie się tam przemieścić.");
                 if (player.isDriver()) {
                     let vehicle = player.vehicle
-                    let speed = vehicle.speed;
-                    if (!vehicle.ignoresTerrain) vehicle += path.getSpeedBonus();
+                    let speed = vehicle.speed; //TODO check if we're not too fast
+                    if (!vehicle.ignoresTerrain) speed += path.getSpeedBonus();
                     if (vehicle.bannedBiomes.some(b => path.hasBiome(b))) throw new ActionException(`${vehicle.getName()} nie jest w stanie pokonać tego terenu.`);
                     for (let i = 0; i < vehicle.needsBuildings.length; i++) {
                         const buildingId = vehicle.needsBuildings[i];
                         if (!path.allHasBuilding(buildingId)) throw new ActionException(`${vehicle.getName()} może przemieszczać się tylko po sektorach zawierających ${BuildingData.get(buildingId).getName()}.`);
                     }
+                    if (directions.length > speed) throw new ActionException(`${vehicle.getName()} ma zbyt małą prędkośc, żeby przemieścić się tak daleko.}`);
                     vehicle.moveTo(path.getEnd());
-                    return { respond: base + `${vehicle.getMoveMessage()}${vehicle.position.equals(path.getEnd()) ? "... tego samego" : " innego"} sektora` };
+                    return { respond: base + `${vehicle.getMoveMessage()}${path.start.equals(path.getEnd()) ? "... tego samego" : " innego"} sektora` };
                 } else {
                     if (directions.length > player.getSpeed() + path.getSpeedBonus())
                         throw new ActionException("Twoja prędkość jest zbyt niska, żeby przemieścić się tak daleko.");
@@ -535,7 +539,6 @@ export class Game {
             if (player.items.canFitItem(items[i])) player.items.addItem(items[i]);
             else {
                 console.assert(storage && storage.canFitItem(items[i]), "Adding an item to storage that can't fit it");
-                console.log("adding " + items[i] + " to storage"); //TEMP
                 storage.addItem(items[i]);
             }
             this.checkItemDiscovery(items[i], player);
@@ -617,6 +620,53 @@ export class Game {
         });
     }
 
+    checkVehicleDiscovery(vehicleId, player) {
+        if (this.discoveries.vehicles.includes(vehicleId)) return;
+        this.queuedDiscoveries.push({
+            vehicle: vehicleId,
+            id: player.discordId,
+            text: "nowy pojazd - " + VehicleData[vehicleId].name
+        });
+    }
+
+    /* //WIP
+handleDiscovery(type, thing, player) {
+    let list, text;
+    switch (type) {
+        case DISCOVERY_TYPE.ITEM:
+            list = this.discoveries.items;
+            text = "nowy przedmiot - ";
+            break;
+        case DISCOVERY_TYPE.COMMAND:
+            list = this.discoveries.commands;
+            text = "nowa akcja - ";
+            break;
+        case DISCOVERY_TYPE.BUILDING:
+            list = this.discoveries.buildings;
+            text = "nowy budynek - ";
+            break;
+        case DISCOVERY_TYPE.RECIPE:
+            list = this.discoveries.recipes;
+            text = "nowy przepis - ";
+            break;
+        case DISCOVERY_TYPE.VEHICLE:
+            list = this.discoveries.vehicles;
+            text = "nowy pojazd - ";
+            break;
+        default:
+            console.assert(false, "Invalid discovery type");
+    }
+    if (!list.includes(thing)) {
+        this.queuedDiscoveries.push({
+            things,
+            id: player.discordId,
+            text: text + thing
+        });
+        list.push(thing);
+    }
+}
+    */
+
     /**
      * Checks if a building is discoverable via blueprint projects, i.e.
      * it hasn't already been discovered and all its ingredients are discovered.
@@ -635,4 +685,23 @@ export class Game {
         return { players: this.players, vehicles: this.vehicles };
     }
 
+}
+
+class Discovery {
+    constructor(type, id, playerId) {
+        this.type = type;
+        this.id = id;
+        this.playerId = playerId;
+        this.text = text;
+    }
+
+    getText() {
+        switch (this.type) {
+            case DISCOVERY_TYPE.ITEM: return "nowy przedmiot - " + printItem(this.id)
+            case DISCOVERY_TYPE.COMMAND: return "nowa akcja - " + capitalize(this.id);
+            case DISCOVERY_TYPE.BUILDING: return "nowy budynek - " + this.id;
+            case DISCOVERY_TYPE.RECIPE: return "nowy przepis - " + this.id;
+            case DISCOVERY_TYPE.VEHICLE: return "nowy pojazd - " + this.id;
+        }
+    }
 }

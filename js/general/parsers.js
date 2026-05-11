@@ -1,4 +1,4 @@
-import { ITEM, BUILDING, DIRECTION, FORGE_ACTION, ACTION } from "./enums.js";
+import { ITEM, BUILDING, DIRECTION, FORGE_ACTION, ACTION, VEHICLE } from "./enums.js";
 import { getDirectionFromString } from "./data.js";
 import { stringsEqual } from "./utils.js";
 import BuildingData from "../../data/buildings.js";
@@ -252,6 +252,6 @@ export class ParserHelperBundle {
     }
 
     getVehiclesOnTile() {
-        return this.tile.getVehicles(this.game.vehicles);
+        return this.tile.getVehiclesHere(this.game.vehicles);
     }
 }

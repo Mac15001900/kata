@@ -162,3 +162,13 @@ export const VEHICLE = Object.freeze({
     PODUSZKOWIEC: "poduszkowiec",
     POCIĄG: "pociąg",
 });
+
+export const DISCOVERY_TYPE = Object.freeze({
+    NONE: 0,
+    ITEM: 1,
+    COMMAND: 2,
+    BUILDING: 3,
+    RECIPE: 4,
+    VEHICLE: 5,
+    SPELL: 6,
+});
