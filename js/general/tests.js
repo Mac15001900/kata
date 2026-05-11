@@ -1,7 +1,7 @@
 import { Game } from "./game.js";
 import { ITEM, BUILDING, STATE, ACTION, VEHICLE, DISCOVERY_TYPE } from "./enums.js";
 import ItemData from "../../data/items.js";
-
+import Point from "../objects/point.js";
 
 let testsPassed = 0;
 let testsRan = 0;
@@ -23,8 +23,8 @@ function testEqual(a, b, errorMessage) {
 }
 
 function testPlayerPosition(player, x, y) {
-    test(player.position.x === x, `Player's X is ${player.x}. Expected ${x}.`);
-    test(player.position.y === y, `Player's Y is ${player.y}. Expected ${y}.`);
+    test(player.position.x === x, `Player's X is ${player.position.x}. Expected ${x}.`);
+    test(player.position.y === y, `Player's Y is ${player.position.y}. Expected ${y}.`);
 }
 
 function action(string, repeat = 1) {
@@ -56,16 +56,22 @@ export function bigGameTest() {
     //#region Basic tests
     //Game and player creation
     game = new Game();
+    test(game != null, "Game not created");
     global.testGame = game;
     let discoveries = game.discoveries;
-    test(game != null, "Game created");
+    testEqual(discoveries.length, 0);
     game.addDiscordMemberAsPlayer({ id: "1", nick: "AB CD" }, 0, 0);
     test(game.players.length === 1, "Player added");
+
     let player = game.getAllPlayers()[0];
     test(player.name === "U-ABCD", "Player's name is incorrect'");
     test(player.discordId === "1", "Player's id is incorrect");
-
-    testEqual(discoveries.length, 0);
+    testEqual(player.getSpeed(), 2);
+    testEqual(player.getWeight(), 1);
+    test(!player.isInVehicle());
+    test(!player.hasBlueprintProject());
+    testEqual(player.states.length, 0);
+    test(player.printEquipment().length > 0);
 
     //#region Movement
     //Basic movement
@@ -954,6 +960,96 @@ export function bigGameTest() {
     testEqual(cart.position.distanceTo(player.position), 1);
     action("prowadź wóz");
     assertError();
+    testPlayerPosition(player, 1, 1);
+
+    //#region Roads
+    //We're making a road from (0,1) to (3,1) inclusive
+
+    //Building roads
+    test(!discoveries.has(DISCOVERY_TYPE.BUILDING, BUILDING.DROGA));
+    action("buduj marmur");
+    test(discoveries.has(DISCOVERY_TYPE.BUILDING, BUILDING.DROGA));
+    action("zbierz", 2);
+    action("dodaj droga marmur");
+    action("pracuj droga");
+    action("idź lewo");
+    action("buduj marmur");
+    action("dodaj droga marmur");
+    action("pracuj droga");
+    action("idź prawo");
+    action("zbierz", 2);
+    for (let i = 0; i < 2; i++) {
+        action("idź prawo");
+        action("buduj marmur");
+        action("dodaj droga marmur");
+        action("pracuj droga");
+    }
+    test(game.board.get(new Point(0, 1)).hasBuilding(BUILDING.DROGA));
+    test(game.board.get(new Point(1, 1)).hasBuilding(BUILDING.DROGA));
+    test(game.board.get(new Point(2, 1)).hasBuilding(BUILDING.DROGA));
+    test(game.board.get(new Point(3, 1)).hasBuilding(BUILDING.DROGA));
+    test(!game.board.get(new Point(4, 1)).hasBuilding(BUILDING.DROGA));
+
+    //Using with player
+    testPlayerPosition(player, 3, 1);
+    action("idź lewo lewo lewo lewo");
+    assertError();
+    action("idź lewo lewo lewo");
+    assertPublicResponse();
+    testPlayerPosition(player, 0, 1);
+    action("idź prawo prawo prawo prawo");
+    assertError();
+    testPlayerPosition(player, 0, 1);
+    action("idź prawo prawo prawo ");
+    assertPublicResponse();
+    testPlayerPosition(player, 3, 1);
+    action("idź lewo lewo góra ");
+    assertError();
+    testPlayerPosition(player, 3, 1);
+    action("idź prawo");
+    testPlayerPosition(player, 4, 1);
+    action("idź lewo lewo lewo");
+    assertError();
+    testPlayerPosition(player, 4, 1);
+    action("idź lewo", 3);
+    testPlayerPosition(player, 1, 1);
+    action("idź prawo prawo prawo");
+    assertError();
+    testPlayerPosition(player, 1, 1);
+
+    //Using with vehicle
+    action("idź lewo");
+    action("prowadź wóz");
+    action("idź prawo prawo prawo");
+    assertError();
+    action("idź góra góra");
+    assertError();
+    action("idź prawo prawo");
+    assertPublicResponse();
+    testPlayerPosition(player, 2, 1);
+    action("idź prawo góra");
+    assertError();
+    action("idź prawo");
+    action("idź prawo prawo");
+    assertError();
+    testPlayerPosition(player, 3, 1);
+    test(cart.position.equals(player.position));
+    action("idź lewo lewo lewo ");
+    assertError();
+    action("wysiądź");
+    action("idź lewo lewo lewo ");
+    assertPublicResponse();
+    testPlayerPosition(player, 0, 1);
+    test(cart.position.equals(new Point(3, 1)));
+
+    //Clean up
+    action("idź prawo prawo prawo");
+    action("prowadź wóz");
+    action("idź lewo lewo ");
+    action("wysiądź");
+    testPlayerPosition(player, 1, 1);
+    test(cart.position.equals(new Point(1, 1)));
+
 
 
     console.log(`Ran ${testsRan} tests, ${testsPassed} passed.`);

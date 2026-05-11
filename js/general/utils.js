@@ -240,4 +240,8 @@ export const ExtraMath = {
     }
 }
 
+export function unique(list) {
+    return [...new Set(list)];
+}
+
 global.ExtraMath = ExtraMath;

@@ -97,7 +97,7 @@ export default class Player {
     getSpeed() {
         let res = this.baseSpeed;
         this.items.asList().forEach(item => {
-            res += ItemData[item].speedBonus;
+            res += ItemData[item].speedBonus || 0;
         });
         return res;
     }
