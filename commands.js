@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { getRPSChoices } from './examples/game.js';
-import { capitalize, InstallGlobalCommands } from './js/utils.js';
+import { capitalize, InstallGlobalCommands } from './js/general/utils.js';
 /*
 // Get the game choices from game.js
 function createCommandChoices() {
@@ -71,9 +71,9 @@ const AKCJA_COMMAND = {
   ],
 };
 
-const DEBUG_COMMAND = {
-  name: 'debug',
-  description: 'Do debugowania',
+const ADMIN_COMMAND = {
+  name: 'admin',
+  description: 'Admin things',
   type: 1,
   integration_types: [0, 1],
   contexts: [0],
@@ -88,6 +88,6 @@ const DEBUG_COMMAND = {
   ],
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, PATRZ_COMMAND, AKCJA_COMMAND, DEBUG_COMMAND];
+const ALL_COMMANDS = [TEST_COMMAND, PATRZ_COMMAND, AKCJA_COMMAND, ADMIN_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);

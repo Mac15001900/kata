@@ -206,7 +206,7 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
             }
         }
 
-        if (name === "debug") {
+        if (name === "admin" || name === "debug") {
             let input = data.options[0].value;
             let command = data.options[0].value.split(' ')[0];
             let options = data.options[0].value.split(' ').slice(1);
