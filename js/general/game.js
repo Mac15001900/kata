@@ -3,7 +3,7 @@ import BuildingData from "../../data/buildings.js";
 import Tile from "../objects/tile.js";
 import Board from "../objects/board.js";
 import Player from "../objects/player.js";
-import { getCommandFromString, getDirectionFromString, getActionCost, canPerformActionAsVehicleDriver, canPerformActionAsVehiclePassenger } from "./data.js";
+import { getCommandFromString, getActionCost, canPerformActionAsVehicleDriver, canPerformActionAsVehiclePassenger, getCommandName } from "../../data/commands.js";
 import { moveCoordinates, capitalize, stringsEqual, itemFromString, printItem, arraysEqual, printifyInventory, parseBuildingAndItems, getCraftingRecipe, printItemList, printItemLoot, adjustWordPl } from "./utils.js";
 import { ITEM, BIOME, ACTION, DIRECTION, STATE, BUILDING, FORGE_RESULT, DISCOVERY_TYPE } from './enums.js';
 import BiomeData from "../../data/biomes.js";
@@ -35,13 +35,8 @@ export class Game {
         this.board = this.buildBoardFromFile(config.mapFile);
         this.players = [];
         this.vehicles = [];
-        this.discoveries = {
-            items: [],
-            commands: [],
-            buildings: [],
-            recipes: [],
-            vehicles: [],
-        }
+        this.discoveries = [];
+        this.discoveries.has = (type, id) => this.discoveries.some(d => d.equals(type, id));
         this.queuedDiscoveries = [];
     }
 
@@ -66,15 +61,15 @@ export class Game {
             } else throw e
         }
 
-        if (this.queuedDiscoveries.some(d => d.id === userId)) {
-            let discoveries = this.queuedDiscoveries.filter(d => d.id === userId);
-            if (discoveries.length > 1) {
-                res.discovery = "odkrywa:\n" + discoveries.map(d => capitalize(d.text)).join("\n");
+        if (this.queuedDiscoveries.some(d => d.playerId === userId)) {
+            let newDiscoveries = this.queuedDiscoveries.filter(d => d.playerId === userId);
+            if (newDiscoveries.length > 1) {
+                res.discovery = "odkrywa:\n" + newDiscoveries.map(d => capitalize(d.getText())).join("\n");
             } else {
-                res.discovery = `odkrywa ${discoveries[0].text}!`;
+                res.discovery = `odkrywa ${newDiscoveries[0].getText()}!`;
             }
-            discoveries.forEach(d => this.addDiscovery(d));
-            this.queuedDiscoveries = this.queuedDiscoveries.filter(d => d.id !== userId);
+            this.discoveries.push(...newDiscoveries);
+            this.queuedDiscoveries = this.queuedDiscoveries.filter(d => d.playerId !== userId);
         }
 
         return res;
@@ -115,7 +110,7 @@ export class Game {
         let actionStrength = player.getActionStrength(command, currentBiome);
 
         if (command !== ACTION.NONE) {
-            this.checkCommandDiscovery(command, player, inputString.split(" ")[0]);
+            this.checkDiscovery(DISCOVERY_TYPE.COMMAND, command, player);
             if (player.isInVehicle()) {
                 if (player.isDriver() && !canPerformActionAsVehicleDriver(command)) throw new ActionException("Nie możesz tego zrobić, gdy prowadisz pojazd. Musisz najpierw z niego wysiąść.");
                 else if (!player.isDriver() && !canPerformActionAsVehiclePassenger(command)) {
@@ -150,14 +145,14 @@ export class Game {
 
                         //This is intentionally *not* throwing the exception; experimenting with ingredients is meant to use up an action
                         if (!recipe) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić." };
-                        this.checkRecipeDiscovery(recipe, player);
+                        this.checkDiscovery(DISCOVERY_TYPE.RECIPE, recipe.name, player);
                         if (!building.hasEnoughFuel()) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić.\nChociaż masz wrażenie, że mogłoby to się udać przy większej temperaturze. Możesz trzeba tu najpierw dorzucić paliwa?" };
 
                         if (recipe.makesVehicle) {
                             this.removeItems(recipe.input, player, storage);
                             let vehicle = new Vehicle(recipe.output, player.position.copy())
                             this.vehicles.push(vehicle);
-                            this.checkVehicleDiscovery(vehicle.id, player);
+                            this.checkDiscovery(DISCOVERY_TYPE.VEHICLE, vehicle.id, player);
                             return { respond: base + `Budujesz ${vehicle.getName()}.` };
                         } else {
                             if (!player.items.canSwapItems(recipe.input, recipe.output, storage))
@@ -352,7 +347,7 @@ export class Game {
                         if (currentTile.getConstruction(data.id)) throw new ActionException("Tu już powstaje taki budynek.");
                         if (data.unique && currentTile.hasBuilding(data.id)) throw new ActionException("Taki budynek może być w danym miejscu tylko jeden.");
                         currentTile.startConstruction(data);
-                        this.checkBuildingDiscovery(data, player);
+                        this.checkDiscovery(DISCOVERY_TYPE.BUILDING, data.id, player);
                         return { respond: base + `Zaczynasz budować ${data.name}.` };
                     }
                 }
@@ -365,7 +360,7 @@ export class Game {
                     let { items } = parseItemList(options, bundle);
                     let project = player.getBlueprintProject();
                     if (project.isSolution(items)) {
-                        this.checkBuildingDiscovery(project.getBuildingId(), player);
+                        this.checkDiscovery(DISCOVERY_TYPE.BUILDING, project.getBuildingId(), player);
                         player.finishBlueprintProject();
                     }
                     return { respond: base + project.messageForGuess(items) };
@@ -541,7 +536,7 @@ export class Game {
                 console.assert(storage && storage.canFitItem(items[i]), "Adding an item to storage that can't fit it");
                 storage.addItem(items[i]);
             }
-            this.checkItemDiscovery(items[i], player);
+            this.checkDiscovery(DISCOVERY_TYPE.ITEM, items[i], player);
         }
     }
 
@@ -577,95 +572,11 @@ export class Game {
         return `Zyskujesz status **nasycony** na ${foodValue} ${adjustWordPl(foodValue, "cykl", "cykle", "cykli")}. Zapewnia on dodatkową akcję w każdym cyklu.`;
     }
 
-    addDiscovery(discovery) {
-        if (discovery.item) this.discoveries.items.push(discovery.item);
-        if (discovery.command) this.discoveries.commands.push(discovery.command);
-        if (discovery.building) this.discoveries.buildings.push(discovery.building);
-        if (discovery.recipe) this.discoveries.recipes.push(discovery.recipe);
+    checkDiscovery(type, id, player) {
+        if (!this.discoveries.some(d => d.equals(type, id)) && !this.queuedDiscoveries.some(d => d.equals(type, id))) {
+            this.queuedDiscoveries.push(new Discovery(type, id, player.discordId));
+        }
     }
-
-    checkItemDiscovery(item, player) {
-        if (this.discoveries.items.includes(item)) return;
-        this.queuedDiscoveries.push({
-            item: item,
-            id: player.discordId,
-            text: "nowy przedmiot - " + printItem(item)
-        });
-    }
-
-    checkBuildingDiscovery(buildingData, player) {
-        if (this.discoveries.buildings.includes(buildingData.id)) return;
-        this.queuedDiscoveries.push({
-            building: buildingData.id,
-            id: player.discordId,
-            text: "nowy budynek - " + buildingData.name
-        });
-    }
-
-    checkCommandDiscovery(command, player, commandText) {
-        if (this.discoveries.commands.includes(command)) return;
-        this.queuedDiscoveries.push({
-            command: command,
-            id: player.discordId,
-            text: "nową akcję - " + capitalize(commandText)
-        });
-    }
-
-    checkRecipeDiscovery(recipe, player) {
-        if (this.discoveries.recipes.includes(recipe.name)) return;
-        this.queuedDiscoveries.push({
-            recipe: recipe.name,
-            id: player.discordId,
-            text: "nowy przepis - " + recipe.name
-        });
-    }
-
-    checkVehicleDiscovery(vehicleId, player) {
-        if (this.discoveries.vehicles.includes(vehicleId)) return;
-        this.queuedDiscoveries.push({
-            vehicle: vehicleId,
-            id: player.discordId,
-            text: "nowy pojazd - " + VehicleData[vehicleId].name
-        });
-    }
-
-    /* //WIP
-handleDiscovery(type, thing, player) {
-    let list, text;
-    switch (type) {
-        case DISCOVERY_TYPE.ITEM:
-            list = this.discoveries.items;
-            text = "nowy przedmiot - ";
-            break;
-        case DISCOVERY_TYPE.COMMAND:
-            list = this.discoveries.commands;
-            text = "nowa akcja - ";
-            break;
-        case DISCOVERY_TYPE.BUILDING:
-            list = this.discoveries.buildings;
-            text = "nowy budynek - ";
-            break;
-        case DISCOVERY_TYPE.RECIPE:
-            list = this.discoveries.recipes;
-            text = "nowy przepis - ";
-            break;
-        case DISCOVERY_TYPE.VEHICLE:
-            list = this.discoveries.vehicles;
-            text = "nowy pojazd - ";
-            break;
-        default:
-            console.assert(false, "Invalid discovery type");
-    }
-    if (!list.includes(thing)) {
-        this.queuedDiscoveries.push({
-            things,
-            id: player.discordId,
-            text: text + thing
-        });
-        list.push(thing);
-    }
-}
-    */
 
     /**
      * Checks if a building is discoverable via blueprint projects, i.e.
@@ -674,9 +585,9 @@ handleDiscovery(type, thing, player) {
      * @returns  True iff the building can be discovered this way
      */
     isBuildingBlueprintable(building) {
-        if (this.discoveries.buildings.includes(building.id)) return false;
+        if (this.discoveries.has(DISCOVERY_TYPE.BUILDING, building.id)) return false;
         for (let i = 0; i < building.cost.length; i++) {
-            if (!this.discoveries.items.includes(building.cost[i])) return false;
+            if (!this.discoveries.has(DISCOVERY_TYPE.ITEM, building.cost[i])) return false;
         }
         return true;
     }
@@ -692,16 +603,20 @@ class Discovery {
         this.type = type;
         this.id = id;
         this.playerId = playerId;
-        this.text = text;
+        this.text = this.getText();
     }
 
     getText() {
         switch (this.type) {
             case DISCOVERY_TYPE.ITEM: return "nowy przedmiot - " + printItem(this.id)
-            case DISCOVERY_TYPE.COMMAND: return "nowa akcja - " + capitalize(this.id);
-            case DISCOVERY_TYPE.BUILDING: return "nowy budynek - " + this.id;
+            case DISCOVERY_TYPE.COMMAND: return "nowa akcja - " + capitalize(getCommandName(this.id));
+            case DISCOVERY_TYPE.BUILDING: return "nowy budynek - " + BuildingData.get(this.id).name;
             case DISCOVERY_TYPE.RECIPE: return "nowy przepis - " + this.id;
-            case DISCOVERY_TYPE.VEHICLE: return "nowy pojazd - " + this.id;
+            case DISCOVERY_TYPE.VEHICLE: return "nowy pojazd - " + VehicleData[this.id].name;
         }
+    }
+
+    equals(type, id) {
+        return this.type === type && this.id === id;
     }
 }

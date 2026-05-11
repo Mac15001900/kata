@@ -73,4 +73,8 @@ const RecipeData = [
 
 ]
 
+RecipeData.get = function (name) {
+    return this.find(b => b.name === name);
+}
+
 export default RecipeData;

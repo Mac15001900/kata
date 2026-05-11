@@ -1,5 +1,5 @@
 import { ITEM, BUILDING, DIRECTION, FORGE_ACTION, ACTION, VEHICLE } from "./enums.js";
-import { getDirectionFromString } from "./data.js";
+import { getDirectionFromString } from "../../data/misc.js";
 import { stringsEqual } from "./utils.js";
 import BuildingData from "../../data/buildings.js";
 

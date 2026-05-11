@@ -38,6 +38,6 @@ export class BlueprintProject {
     }
 
     getBuildingId() {
-        return this.buildingData;
+        return this.buildingData.id;
     }
 }

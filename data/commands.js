@@ -1,5 +1,5 @@
-import { removePolishCharacters } from "./utils.js";
-import { BIOME, ACTION, DIRECTION } from './enums.js';
+import { removePolishCharacters } from "../js/general/utils.js";
+import { BIOME, ACTION } from '../js/general/enums.js';
 
 export function getCommandFromString(string) {
     let testString = removePolishCharacters(string.toLowerCase());
@@ -47,24 +47,42 @@ export function getActionCost(action) {
     return 1;
 }
 
-export function getDirectionFromString(string) {
-    let testString = removePolishCharacters(string.toLowerCase());
-    let s = {};
-    s[DIRECTION.DOWN] = 'dół d południe s';
-    s[DIRECTION.LEFT] = 'lewo l zachód w';
-    s[DIRECTION.RIGHT] = 'prawo p wschód e';
-    s[DIRECTION.UP] = 'góra g północ n';
-
-    for (let key in s) {
-        if (removePolishCharacters(s[key]).split(' ').includes(testString)) return Number(key);
-    }
-    return DIRECTION.NONE;
-}
-
 export function canPerformActionAsVehiclePassenger(action) {
     return [ACTION.WYSIĄDŹ, ACTION.EKWIPUNEK].includes(action);
 }
 
 export function canPerformActionAsVehicleDriver(action) {
     return canPerformActionAsVehiclePassenger(action) || action === ACTION.IDŹ;
+}
+
+export function getCommandName(command) {
+    switch (command) {
+        case ACTION.UŻYJ: return "Użyj";
+        case ACTION.POMÓŻ: return "Pomóż";
+        case ACTION.PRACUJ: return "Pracuj";
+        case ACTION.SZUKAJ: return "Szukaj";
+        case ACTION.ZBIERAJ: return "Zbieraj";
+        case ACTION.KOP: return "Kop";
+        case ACTION.EKWIPUNEK: return "Ekwipunek";
+        case ACTION.WEŹ: return "Weź";
+        case ACTION.WYRZUĆ: return "Wyrzuć";
+        case ACTION.DODAJ: return "Dodaj";
+        case ACTION.ZJEDZ: return "Zjedz";
+        case ACTION.ZOSTAW: return "Zostaw";
+        case ACTION.DAJ: return "Daj";
+        case ACTION.DORZUĆ: return "Dorzuć";
+        case ACTION.IDŹ: return "Idź";
+        case ACTION.PRZYZWIJ: return "Przyzwij";
+        case ACTION.TELEPORTUJ: return "Teleportuj";
+        case ACTION.BUDUJ: return "Buduj";
+        case ACTION.TWÓRZ: return "Twórz";
+        case ACTION.PROJEKTUJ: return "Projektuj";
+        case ACTION.KUJ: return "Kuj";
+        case ACTION.WSIĄDŹ: return "Wsiądź";
+        case ACTION.WYSIĄDŹ: return "Wysiądź";
+        case ACTION.WŁÓŻ: return "Włóż";
+        case ACTION.WYJMIJ: return "Wyjmij";
+        case ACTION.PROWADŹ: return "Prowadź";
+        default: return "?????";
+    }
 }

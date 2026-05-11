@@ -1,5 +1,5 @@
 import { Game } from "./game.js";
-import { ITEM, BUILDING, STATE, ACTION, VEHICLE } from "./enums.js";
+import { ITEM, BUILDING, STATE, ACTION, VEHICLE, DISCOVERY_TYPE } from "./enums.js";
 import ItemData from "../../data/items.js";
 
 
@@ -56,6 +56,7 @@ export function bigGameTest() {
     //#region Basic tests
     //Game and player creation
     game = new Game();
+    global.testGame = game;
     let discoveries = game.discoveries;
     test(game != null, "Game created");
     game.addDiscordMemberAsPlayer({ id: "1", nick: "AB CD" }, 0, 0);
@@ -64,17 +65,14 @@ export function bigGameTest() {
     test(player.name === "U-ABCD", "Player's name is incorrect'");
     test(player.discordId === "1", "Player's id is incorrect");
 
-    testEqual(discoveries.items.length, 0);
-    testEqual(discoveries.commands.length, 0);
-    testEqual(discoveries.buildings.length, 0);
-    testEqual(discoveries.recipes.length, 0);
+    testEqual(discoveries.length, 0);
 
     //#region Movement
     //Basic movement
     testPlayerPosition(player, 0, 0);
     action("idź góra");
     testPlayerPosition(player, 0, 1);
-    test(discoveries.commands.includes(ACTION.IDŹ));
+    test(discoveries.has(DISCOVERY_TYPE.COMMAND, ACTION.IDŹ));
     action("idź dół");
     testPlayerPosition(player, 0, 0);
     action("idź prawo");
@@ -134,25 +132,25 @@ export function bigGameTest() {
     //Light-item collection
     action("szukaj");
     testEqual(player.items.lightItems.length, 1, "Player finding an item");
-    testEqual(discoveries.items.length, 1, "First item discovery");
-    test(discoveries.commands.includes(ACTION.SZUKAJ));
+    testEqual(discoveries.filter(d => d.type == DISCOVERY_TYPE.ITEM).length, 1, "First item discovery");
+    test(discoveries.has(DISCOVERY_TYPE.COMMAND, ACTION.SZUKAJ));
     action("szukaj");
     testEqual(player.items.lightItems.length, 2, "Player finding an item");
     test(player.hasItem(ITEM.TĘCZOWY_KWIAT) || player.hasItem(ITEM.ŚWIECĄCY_KAMIEŃ), "Wrong item collected in purple");
-    test(discoveries.items.includes(ITEM.TĘCZOWY_KWIAT) || discoveries.items.includes(ITEM.ŚWIECĄCY_KAMIEŃ));
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.TĘCZOWY_KWIAT) || discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.ŚWIECĄCY_KAMIEŃ));
     action("idź góra");
     action("szukaj");
     test(player.hasItem(ITEM.LIŚĆ) || player.hasItem(ITEM.SADZONKA) || player.hasItem(ITEM.ŻYWICA), "Wrong item collected in red");
     testEqual(player.items.lightItems.length, 3, "Player finding an item");
     testEqual(player.items.getItemAmount(), 3, "Player finding an item");
-    test(discoveries.items.length >= 2);
+    test(discoveries.length >= 2);
     player.items.clearAllItems(); //We need to do this not to mess up further tests
     testEqual(player.items.getItemAmount(), 0, "Clearing items");
 
     //Heavy item collection and throwing things away
     action("zbierz");
     test(player.hasItem(ITEM.DREWNO), "Wood not collected");
-    test(discoveries.items.includes(ITEM.DREWNO), "Wood not discovered");
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.DREWNO), "Wood not discovered");
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 1, "Wood not collected");
     action("zbierz");
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 2, "Wood not collected");
@@ -161,7 +159,7 @@ export function bigGameTest() {
     action("idź prawo");
     action("zbierz");
     testEqual(player.items.getItemAmount(ITEM.MARMUR), 1, "Marble not collected");
-    test(discoveries.items.includes(ITEM.MARMUR), "Marble not discovered");
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.MARMUR), "Marble not discovered");
     action("zbierz");
     testEqual(player.items.getItemAmount(ITEM.MARMUR), 1, "Items beyond max capacity collected");
     action("wyrzuć drewno");
@@ -224,7 +222,7 @@ export function bigGameTest() {
     action("buduj Marmur Marmur Drewno Drewno");
     testEqual(cityTile.construction.length, 1, "Construction not started");
     testEqual(cityTile.buildings.length, 0, "Building created prematurely");
-    test(discoveries.buildings.includes(BUILDING.DOM), "House not discovered");
+    test(discoveries.has(DISCOVERY_TYPE.BUILDING, BUILDING.DOM), "House not discovered");
     let constructionSite = cityTile.construction[0];
     test(constructionSite.needsItem(ITEM.DREWNO));
     test(constructionSite.needsItem(ITEM.MARMUR));
@@ -384,7 +382,7 @@ export function bigGameTest() {
     testEqual(cityTile.construction.length, 0, "Weird construction from nowhere");
     action("buduj marmur marmur");
     testEqual(cityTile.construction.length, 1, "Construction failed to start");
-    test(discoveries.buildings.includes(BUILDING.PIEC), "Furnace not discovered");
+    test(discoveries.has(DISCOVERY_TYPE.BUILDING, BUILDING.PIEC), "Furnace not discovered");
     action("dodaj piec marmur");
     action("dodaj piec marmur");
     action("pracuj piec");
@@ -467,8 +465,8 @@ export function bigGameTest() {
     testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 0);
     testEqual(player.items.getItemAmount(ITEM.ŻELAZO), 1);
     testEqual(furnace.operationsAvailable(), 1);
-    test(discoveries.items.includes(ITEM.ŻELAZO));
-    test(discoveries.recipes.includes("Przetapianie rudy żelaza"));
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.ŻELAZO));
+    test(discoveries.has(DISCOVERY_TYPE.RECIPE, "Przetapianie rudy żelaza"));
     action("zostaw żelazo");
     testEqual(player.items.getItemAmount(ITEM.ŻELAZO), 0);
     testEqual(cityTile.items.getItemAmount(ITEM.ŻELAZO), 1);
@@ -518,7 +516,7 @@ export function bigGameTest() {
     //#region Eating
     action("zjedz");
     assertError();
-    test(discoveries.commands.includes(ACTION.ZJEDZ));
+    test(discoveries.has(DISCOVERY_TYPE.COMMAND, ACTION.ZJEDZ));
     action("zjedz tęczowy kwiat");
     assertError();
     action("zjedz jagody");
@@ -534,19 +532,19 @@ export function bigGameTest() {
         if (i > 1000) throw "No rainbow flower found";
     }
     test(player.items.hasItem(ITEM.TĘCZOWY_KWIAT));
-    test(discoveries.items.includes(ITEM.TĘCZOWY_KWIAT));
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.TĘCZOWY_KWIAT));
     testEqual(player.maxMana, 0);
     action("zjedz tęczowy kwiat");
     test(!player.items.hasItem(ITEM.TĘCZOWY_KWIAT));
     test(player.items.hasItem(ITEM.NASIONA_TĘCZOWY_KWIAT));
-    test(discoveries.items.includes(ITEM.NASIONA_TĘCZOWY_KWIAT));
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.NASIONA_TĘCZOWY_KWIAT));
     testEqual(player.maxMana, 1);
 
     action("zbierz");
     action("zjedz grzyb");
     assertError();
     action("wyrzuć grzyb");
-    test(discoveries.items.includes(ITEM.GRZYB));
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.GRZYB));
 
     action("idź prawo");
     i = 0;
@@ -556,12 +554,12 @@ export function bigGameTest() {
         if (i > 1000) throw "No blueberries found";
     }
     test(player.items.hasItem(ITEM.JAGODY));
-    test(discoveries.items.includes(ITEM.JAGODY));
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.JAGODY));
     test(!player.hasState(STATE.FED));
     action("zjedz jagody");
     test(!player.items.hasItem(ITEM.JAGODY));
     test(player.items.hasItem(ITEM.NASIONA_JAGODY));
-    test(discoveries.items.includes(ITEM.NASIONA_JAGODY));
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.NASIONA_JAGODY));
     test(player.hasState(STATE.FED));
     testEqual(player.maxMana, 1);
 
@@ -576,10 +574,10 @@ export function bigGameTest() {
     action("idź lewo");
     action("idź lewo");
     testPlayerPosition(player, 1, 1);
-    testEqual(discoveries.buildings.length, 2);
+    testEqual(discoveries.filter(d => d.type == DISCOVERY_TYPE.BUILDING).length, 2);
     action("projektuj");
     assertError();
-    test(discoveries.commands.includes(ACTION.PROJEKTUJ));
+    test(discoveries.has(DISCOVERY_TYPE.COMMAND, ACTION.PROJEKTUJ));
     action("projektuj dlfghh");
     assertError();
     action("projektuj drewno");
@@ -621,7 +619,7 @@ export function bigGameTest() {
     testEqual(countCorrect(action("projektuj marmur nasiona jagód ruda żelaza marmur marmur grzyb")), 5);
     //Finishing the blueprint:
     testEqual(countCorrect(action("projektuj marmur nasiona jagód tęczowy kwiat marmur marmur grzyb")), 6);
-    test(discoveries.buildings.includes(BUILDING.TEST));
+    test(discoveries.has(DISCOVERY_TYPE.BUILDING, BUILDING.TEST));
     test(!player.hasBlueprintProject());
     action("projektuj marmur nasiona jagód tęczowy kwiat marmur marmur grzyb");
     assertError();
@@ -769,7 +767,7 @@ export function bigGameTest() {
     action('kuj żelazo 128 uklep uderz mocno zakończ');
     testEqual(forge.storedIngots.length, 0);
     test(player.items.hasItem(ITEM.ŻELAZNY_KILOF));
-    test(discoveries.items.includes(ITEM.ŻELAZNY_KILOF));
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.ŻELAZNY_KILOF));
     //Breaking an ingot
     forge.forceAddIngot(ITEM.ŻELAZO, 10);
     testEqual(forge.amountOfIngots(), 1);
@@ -778,7 +776,7 @@ export function bigGameTest() {
     action('kuj żelazo 640 uderz mocno uderz mocno uderz mocno');
     testEqual(forge.amountOfIngots(), 0);
     test(player.items.hasItem(ITEM.KAWAŁKI_ŻELAZA));
-    test(discoveries.items.includes(ITEM.KAWAŁKI_ŻELAZA));
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.KAWAŁKI_ŻELAZA));
 
     //#region Tools
 
@@ -813,7 +811,7 @@ export function bigGameTest() {
     action("kuj żelazo 350 uderz mocno zakończ");
     testEqual(forge.storedIngots.length, 0);
     test(player.items.hasItem(ITEM.ŻELAZNY_MŁOT));
-    test(discoveries.items.includes(ITEM.ŻELAZNY_MŁOT));
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.ŻELAZNY_MŁOT));
 
     forge.forceAddIngot(ITEM.ŻELAZO, 350);
     action("kuj żelazo 350 uderz słabo uderz słabo uderz słabo uderz słabo");
@@ -857,7 +855,7 @@ export function bigGameTest() {
     action("kuj żelazo 376 uklep uderz słabo uderz słabo zakończ");
     testEqual(forge.amountOfIngots(), 0);
     test(player.items.hasItem(ITEM.ŻELAZNY_TOPÓR));
-    test(discoveries.items.includes(ITEM.ŻELAZNY_TOPÓR));
+    test(discoveries.has(DISCOVERY_TYPE.ITEM, ITEM.ŻELAZNY_TOPÓR));
 
     action("idź lewo");
     testEqual(player.items.getItemAmount(ITEM.DREWNO), 0);
