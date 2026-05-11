@@ -47,7 +47,7 @@ const DEBUG = {
     addMacOnStart: true,
     updateMapOnAction: true,
     runTestsOnStart: true,
-    ignoreBuildingCosts: false,
+    skipAllItemChecks: false,
     hideDisoveryMessages: false,
 }
 global.debug = DEBUG;

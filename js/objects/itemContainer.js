@@ -66,18 +66,40 @@ export default class ItemContainer {
         }
     }
 
-    hasItem(item) {
+    _hasItem(item) {
+        if (global.debug.skipAllItemChecks) return true;
         return this.heavyItems.includes(item) || this.lightItems.includes(item);
     }
 
-    hasAllItems(items) {
-        let remaining = [...this.asList()];
+    /**
+     * Checks if a given item is present in this container, or optionally in any of the given containers
+     * @param {ITEM} item The item to check for
+     * @param  {...ItemContainer} otherContainers Other containers to check too
+     * @returns {boolean}
+     */
+    hasItem(item, ...otherContainers) {
+        return this._hasItem(item) || otherContainers.some(c => c._hasItem(item));
+    }
+
+    _hasAllItems(items, combinedList) {
+        if (global.debug.skipAllItemChecks) return true;
         for (let key in items) {
-            let index = remaining.indexOf(items[key]);
-            if (index > -1) remaining.splice(index, 1);
+            let index = combinedList.indexOf(items[key]);
+            if (index > -1) combinedList.splice(index, 1);
             else return false;
         }
         return true;
+    }
+
+    /**
+     * Checks if a list of items is completely present in this container, or optionally in 
+     * the combined inventory of this and other containers
+     * @param {ITEM[]} items A list of items to check for
+     * @param  {...ItemContainer} otherContainers Other containers to look into as well
+     * @returns {boolean}
+     */
+    hasAllItems(items, ...otherContainers) {
+        return this._hasAllItems(items, this.asList().concat(...otherContainers.map(c => c.asList())));
     }
 
     getItemAmount(item) {
@@ -95,9 +117,10 @@ export default class ItemContainer {
         return this.getRemainingCapacity() >= heavyItems.length;
     }
 
-    canSwapItems(removed, added) {
-        let testContainer = new ItemContainer(this.maxSize);
+    canSwapItems(removed, added, ...otherContainers) {
+        let testContainer = new ItemContainer(this.maxSize + otherContainers.reduce((sum, container) => sum + container.maxSize, 0));
         testContainer.addItemList(this.asList());
+        otherContainers.forEach(c => testContainer.addItemList(c.asList()));
         testContainer.removeItemList(removed);
         return testContainer.canFitItemList(added);
     }

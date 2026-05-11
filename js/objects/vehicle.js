@@ -1,5 +1,5 @@
 import ItemContainer from "./itemContainer.js";
-import VehicleData from "../data/vehicles.js";
+import VehicleData from "../../data/vehicles.js";
 
 export default class Vehicle {
     constructor(id, position) {

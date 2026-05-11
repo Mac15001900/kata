@@ -30,10 +30,11 @@ export function parseItemList(strings) {
     return { items: res, strings: [] };
 }
 
-export function parsePlayerItemList(strings, bundle) {
+export function parsePlayerItemList(strings, bundle, allowFromStorage) {
+    let storage = allowFromStorage ? [bundle.tile.items] : [];
     let { items } = parseItemList(strings);
-    if (bundle.player.items.hasAllItems(items)) return { items, strings: [] };
-    else throw new ActionException("Możesz użyć tylko przedmiotów, które posiadasz.");
+    if (bundle.player.items.hasAllItems(items, ...storage)) return { items, strings: [] };
+    else throw new ActionException(`Możesz użyć tylko przedmiotów z ekwipunku${allowFromStorage ? " lub zmagazynowanych w tym sektorze" : ""}.`);
 }
 
 export function parseSingleItem(strings) {
@@ -53,10 +54,11 @@ export function parseSingleItem(strings) {
     throw new ActionException("Nie ma takiego przedmiotu.");
 }
 
-export function parsePlayerSingleItem(strings, bundle) {
+export function parsePlayerSingleItem(strings, bundle, allowFromStorage) {
     let { item, strings: newStrings } = parseSingleItem(strings);
-    if (bundle.player.items.hasItem(item)) return { item, strings: newStrings };
-    else throw new ActionException("Nie posiadasz takiego przedmiotu.");
+    let storage = allowFromStorage ? [bundle.tile.items] : [];
+    if (bundle.player.items.hasItem(item, ...storage)) return { item, strings: newStrings };
+    else throw new ActionException(`Możesz użyć tylko przedmiotu z ekwipunku${allowFromStorage ? " lub zmagazynowanego w tym sektorze" : ""}.`);
 }
 
 function itemFromString(string) {
@@ -196,11 +198,12 @@ function parseVehicle(string) {
  * @param {Function} parser Input parser to check
  * @param {String[]} strings Player's input, as an array of words
  * @param {ParserHelperBundle} bundle 
+ * @param {...any} otherArgs Other arguments to pass to the parser 
  * @returns {Boolean} Whether the given input can be parsed with the given parses
  */
-export function checkParser(parser, strings, bundle) {
+export function checkParser(parser, strings, bundle, ...otherArgs) {
     try {
-        parser(strings, bundle);
+        parser(strings, bundle, ...otherArgs);
         return true;
     } catch (e) {
         if (e instanceof ActionException) {

@@ -368,6 +368,8 @@ export function bigGameTest() {
     testEqual(player.items.getItemAmount(), 0);
 
     //#region Using a furnace
+
+    //Building a furnace
     action("idź prawo");
     testPlayerPosition(player, 1, 1);
     action("zbierz");
@@ -391,6 +393,7 @@ export function bigGameTest() {
     test(furnace.needsFuel());
     test(!furnace.hasEnoughFuel());
 
+    //Failing to use it
     action("użyj");
     assertSecretResponse();
     action("użyj piec");
@@ -400,6 +403,7 @@ export function bigGameTest() {
     action("użyj piec ruda żelaza ruda żelaza");
     assertSecretResponse();
 
+    //Harvesting iron ore
     action("idź prawo");
     action("idź prawo");
     action("zbierz");
@@ -414,6 +418,7 @@ export function bigGameTest() {
     testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 1);
     test(cityTile.items.hasItem(ITEM.RUDA_ŻELAZA));
 
+    //Adding fuel from inventory
     action("idź lewo")
     action("zbierz");
     action("idź prawo");
@@ -432,6 +437,20 @@ export function bigGameTest() {
     action("dorzuć piec drewno"); //Fails - we don't have any more wood at this point
     testEqual(furnace.operationsAvailable(), 1);
 
+    //Adding fuel from storage
+    action("idź lewo")
+    action("zbierz");
+    action("idź prawo");
+    action("zostaw drewno")
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 0);
+    testEqual(cityTile.items.getItemAmount(ITEM.DREWNO), 1);
+    action("dorzuć piec drewno");
+    testEqual(furnace.operationsAvailable(), 2);
+    testEqual(cityTile.items.getItemAmount(ITEM.DREWNO), 0);
+    action("weź drewno")
+    testEqual(player.items.getItemAmount(ITEM.DREWNO), 0);
+
+    //Smelting from inventory
     testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 1);
     action("weź ruda żelaza");
     testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 2);
@@ -441,12 +460,52 @@ export function bigGameTest() {
     action("użyj piec ruda żelaza ruda żelaza");
     testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 0);
     testEqual(player.items.getItemAmount(ITEM.ŻELAZO), 1);
-    testEqual(furnace.operationsAvailable(), 0);
+    testEqual(furnace.operationsAvailable(), 1);
     test(discoveries.items.includes(ITEM.ŻELAZO));
     test(discoveries.recipes.includes("Przetapianie rudy żelaza"));
     action("zostaw żelazo");
     testEqual(player.items.getItemAmount(ITEM.ŻELAZO), 0);
     testEqual(cityTile.items.getItemAmount(ITEM.ŻELAZO), 1);
+
+    //Smelting from storage
+    action("idź prawo", 2);
+    action("zbierz", 2);
+    action("idź lewo", 2);
+    action("zostaw ruda żelaza", 2);
+    testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 0);
+    testEqual(cityTile.items.getItemAmount(ITEM.RUDA_ŻELAZA), 2);
+    action("użyj piec ruda żelaza ruda żelaza");
+    testEqual(player.items.getItemAmount(ITEM.ŻELAZO), 1);
+    action("zostaw żelazo");
+
+    //Smeting from storage without space in inventory or storage
+    //Ingredients from storage should be replaced with output, since the player can't store it
+    testEqual(cityTile.items.getMaxCapacity(), 4);
+    testEqual(cityTile.items.getRemainingCapacity(), 2);
+    action("idź prawo", 2);
+    action("zbierz", 2);
+    action("idź lewo", 2);
+    action("zostaw ruda żelaza", 2);
+    action("idź lewo")
+    action("zbierz", 2);
+    action("idź prawo");
+    action("dorzuć piec drewno", 2);
+    action("zbierz", 2);
+    testEqual(cityTile.items.getRemainingCapacity(), 0);
+    testEqual(player.items.getRemainingCapacity(), 0);
+    testEqual(cityTile.items.getItemAmount(ITEM.RUDA_ŻELAZA), 2);
+    testEqual(player.items.getItemAmount(ITEM.RUDA_ŻELAZA), 0);
+    testEqual(cityTile.items.getItemAmount(ITEM.ŻELAZO), 2);
+    action("użyj piec ruda żelaza ruda żelaza");
+    testEqual(player.items.getItemAmount(ITEM.ŻELAZO), 0);
+    testEqual(cityTile.items.getItemAmount(ITEM.ŻELAZO), 3);
+
+    //Cleaning up
+    action("wyrzuć marmur", 2);
+    action("weź żelazo", 2);
+    action("wyrzuć żelazo", 2);
+    testEqual(cityTile.items.getItemAmount(ITEM.ŻELAZO), 1);
+    testEqual(player.items.getRemainingCapacity(), 2);
 
 
 
@@ -543,7 +602,7 @@ export function bigGameTest() {
     assertSecretResponse(true);
     test(firstProjectResponse !== secondProjectResponse, "Project creation and continuation should give different responses");
 
-    let countCorrect = (response => response.respond.split(':').filter(s => s === "green_square").length);
+    let countCorrect = (response => response.respond ? response.respond.split(':').filter(s => s === "green_square").length : "No response at all");
     testEqual(countCorrect(action("projektuj marmur nasiona jagód")), 0); //Wrong length
     testEqual(countCorrect(action("projektuj złoto złoto złoto złoto złoto złoto")), 0); //Correct length, no correct items
     testEqual(countCorrect(action("projektuj marmur nasiona jagód złoto złoto złoto złoto")), 2);

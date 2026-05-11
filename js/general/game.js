@@ -107,6 +107,7 @@ export class Game {
         player.remainingActions -= cost;
 
         let currentTile = this.board.get(player.position);
+        let storage = currentTile.items;
         let currentBiome = currentTile.biome;
         let bundle = new ParserHelperBundle(this, currentTile, player);
         let actionStrength = player.getActionStrength(command, currentBiome);
@@ -130,8 +131,8 @@ export class Game {
             case ACTION.UŻYJ: {
                 if (!options[0]) throw new ActionException("Wybierz przedmiot lub budynek.");
 
-                if (checkParser(parsePlayerSingleItem, options, bundle)) { //Using an item
-                    let { item, strings } = parsePlayerSingleItem(options, bundle);
+                if (checkParser(parsePlayerSingleItem, options, bundle, false)) { //Using an item
+                    let { item, strings } = parsePlayerSingleItem(options, bundle, false);
                     if ([ITEM.ŻELAZNY_KILOF, ITEM.ŻELAZNY_TOPÓR, ITEM.ŻELAZNY_MŁOT].includes(item)) {
                         throw new ActionException("Nie musisz używać żadnej komendy, aby użyć tego przedmiotu.\nZapewnia on bonus tak długo, jak znajduje się w twoim ekwipunku.");
                     }
@@ -142,7 +143,7 @@ export class Game {
                         //TODO
                     } else if (building.data.canCraft) { //Using a building with items
 
-                        let { items } = parsePlayerItemList(strings, bundle);
+                        let { items } = parsePlayerItemList(strings, bundle, true);
                         let recipe = getCraftingRecipe(items, building.getId());
 
                         //This is intentionally *not* throwing the exception; experimenting with ingredients is meant to use up an action
@@ -151,16 +152,16 @@ export class Game {
                         if (!building.hasEnoughFuel()) return { respond: base + "Niestety, z tych przedmiotów nie udaje ci się nic zrobić.\nChociaż masz wrażenie, że mogłoby to się udać przy większej temperaturze. Możesz trzeba tu najpierw dorzucić paliwa?" };
 
                         if (recipe.makesVehicle) {
-                            player.items.removeItemList(recipe.input);
+                            this.removeItems(recipe.input, player, storage);
                             let vehicle = new Vehicle(recipe.output, player.position.copy())
                             this.vehicles.push(vehicle);
                             return { respond: base + `Budujesz ${vehicle.getName()}.` };
                         } else {
-                            if (!player.items.canSwapItems(recipe.input, recipe.output))
+                            if (!player.items.canSwapItems(recipe.input, recipe.output, storage))
                                 throw new ActionException(`Nie masz miejsca na ${recipe.output.length === 1 ? "przedmiot, który" : "przedmioty, które"} próbujesz stworzyć.`);
 
-                            player.items.removeItemList(recipe.input);
-                            this.giveItems(recipe.output, player);
+                            this.removeItems(recipe.input, player, storage);
+                            this.giveItems(recipe.output, player, storage);
                             building.runOneCraft();
 
                             return { respond: base + `Tworzysz:\n${printItemList(recipe.output)}.` };
@@ -175,7 +176,7 @@ export class Game {
                 return { respond: base + "TODO" };
             }
             case ACTION.ZJEDZ: {
-                let { item } = parsePlayerSingleItem(options, bundle);
+                let { item } = parsePlayerSingleItem(options, bundle, false);
                 let message = this.eatItem(item, player);
                 player.removeItems(item);
                 let seeds = ItemData[item].foodEatingResultItems;
@@ -239,19 +240,20 @@ export class Game {
                 return { secret: `Zabierasz ${options.join(' ')}.` + freeAction };
             }
             case ACTION.WYRZUĆ: {
-                let { item } = parsePlayerSingleItem(options, bundle);
+                let { item } = parsePlayerSingleItem(options, bundle, false);
                 player.removeItems(item, 1);
                 return { secret: `Wyrzucasz 1x ${capitalize(item)}.` + freeAction };
             }
             case ACTION.DODAJ: {
                 if (checkParser(parseConstructionOnTile, options, bundle)) {
                     let { construction, strings } = parseConstructionOnTile(options, bundle);
-                    let { item } = parsePlayerSingleItem(strings, bundle);
+                    let { item } = parsePlayerSingleItem(strings, bundle, true);
 
                     if (!construction.needsItem(item)) throw new ActionException(`Ten cel nie wymaga tego materiału.`)
 
                     construction.placeItem(item);
-                    player.removeItems(item);
+                    // player.removeItems(item);
+                    this.removeItems(item, player, storage);
 
                     if (construction.hasAllMaterials()) {
                         return { respond: base + `To ostatni materiał którego wymaga ${construction.getName()}.\nPraca: 0/${construction.requiredWork}` + freeAction };
@@ -260,25 +262,26 @@ export class Game {
                     }
                 } else if (checkParser(parseBuildingOnTile, options, bundle)) {
                     let { building, strings } = parseBuildingOnTile(options, bundle);
-                    let { item } = parsePlayerSingleItem(strings, bundle);
+                    let { item } = parsePlayerSingleItem(strings, bundle, true);
                     switch (building.getId()) {
                         case BUILDING.KUŹNIA:
                             let forge = currentTile.getBuilding(BUILDING.KUŹNIA);
                             if (forge.canAddMaterial(item)) {
                                 let result = forge.addMaterial(item);
-                                player.items.removeItem(item);
+                                // player.items.removeItem(item);
+                                this.removeItems(item, player, storage);
                                 return { secret: `Tworzysz ${result.length} ${adjustWordPl(result.length, "sztabkę", "sztabki", "sztabek")} o wartościach: ${result.join(", ")}.` + freeAction };
                             } else {
                                 throw new ActionException(`Nie możesz dodać tego przedmiotu do kuźni.`);
                             }
-                        default: throw new ActionException(`Te budynek nie potrzebuje dodania żadnych przedmiotów`);
+                        default: throw new ActionException(`Te budynek nie potrzebuje dodania żadnych przedmiotów.`);
                     }
                 } else {
                     throw new ActionException("Wybierz budynek lub plac budowy w tym sektorze.");
                 }
             }
             case ACTION.ZOSTAW: {
-                let { item } = parsePlayerSingleItem(options, bundle);
+                let { item } = parsePlayerSingleItem(options, bundle, false);
                 if (!currentTile.items.canFitItem(item)) throw new ActionException("Nie ma tu miejsca na ten przedmiot.");
 
                 player.removeItems(item);
@@ -290,12 +293,12 @@ export class Game {
                 return { respond: base + "TODO" };
             case ACTION.DORZUĆ: {
                 let { building, strings } = parseBuildingOnTile(options, bundle);
-                let { item } = parsePlayerSingleItem(strings, bundle);
+                let { item } = parsePlayerSingleItem(strings, bundle, true);
 
                 if (ItemData[item].fuelValue === 0) throw new ActionException("Ten przedmiot nie nadaje się na paliwo.");
 
                 building.addFuelItem(item);
-                player.items.removeItem(item);
+                this.removeItems(item, player, storage);
                 let ops = building.operationsAvailable();
                 return { respond: `${building.getName()} ma teraz wystarczająco paliwa na ${ops} ${adjustWordPl(ops, "operację", "operacje", "operacji")}.` };
             }
@@ -364,8 +367,7 @@ export class Game {
                     return { respond: base + project.messageForGuess(items) };
 
                 } else { //Start a new project
-                    let { items } = parsePlayerItemList(options, bundle);
-                    // let { items } = parseItemList(options, bundle); //TODO - temporary
+                    let { items } = parsePlayerItemList(options, bundle, false);
                     if (items.length !== 2) throw new ActionException("Wybierz dwa przedmioty");
                     if (items[0] === items[1]) throw new ActionException("Wybierz dwa różne przedmioty");
 
@@ -429,7 +431,7 @@ export class Game {
             }
             case ACTION.WŁÓŻ: {
                 let { vehicle, strings } = parseVehicleOnTile(options, bundle);
-                let { item } = parsePlayerSingleItem(strings, bundle);
+                let { item } = parsePlayerSingleItem(strings, bundle, false);
                 if (!vehicle.items.canFitItem(item)) throw new ActionException("Nie ma tu miejsca na ten przedmiot.");
 
                 player.removeItems(item);
@@ -527,11 +529,27 @@ export class Game {
         console.error("Logical error in pickWeighted");
     }
 
-    giveItems(items, player) {
+    giveItems(items, player, storage) {
         if (typeof items === 'string') items = [items];
         for (let i = 0; i < items.length; i++) {
-            player.items.addItem(items[i]);
+            if (player.items.canFitItem(items[i])) player.items.addItem(items[i]);
+            else {
+                console.assert(storage && storage.canFitItem(items[i]), "Adding an item to storage that can't fit it");
+                console.log("adding " + items[i] + " to storage"); //TEMP
+                storage.addItem(items[i]);
+            }
             this.checkItemDiscovery(items[i], player);
+        }
+    }
+
+    removeItems(items, player, storage) {
+        if (typeof items === 'string') items = [items];
+        for (let i = 0; i < items.length; i++) {
+            if (player.items.hasItem(items[i])) player.items.removeItem(items[i]);
+            else {
+                console.assert(storage && storage.hasItem(items[i]), "Player wants to remove an item they don't have");
+                storage.removeItem(items[i]);
+            }
         }
     }
 

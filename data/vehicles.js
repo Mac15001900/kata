@@ -1,4 +1,4 @@
-import { VEHICLE, ITEM, BIOME, BUILDING } from "../js/general/enums";
+import { VEHICLE, ITEM, BIOME, BUILDING } from "../js/general/enums.js";
 
 /**
  * @type {Object.<string, VehicleData>}

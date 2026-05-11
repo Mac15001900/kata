@@ -26,9 +26,12 @@ export default class Tile {
 
     printTile(movingEntities) {
         let res = ["", "", "", ""];
-        let players = this.getPlayersHere(movingEntities.players);
-        if (players.length > 2) {
+        let players = this.getPlayersHere(movingEntities.players).map(p => p.getName());
+        let vehicles = this.printVehicles(this.getVehiclesHere(movingEntities.vehicles));
+
+        if (players.length > 2 || vehicles.length > 0) {
             res[0] = `U x ${players.length}`;
+            res[1] = vehicles;
         } else {
             if (players[0]) res[0] = players[0].name;
             if (players[1]) res[1] = players[1].name;
@@ -42,6 +45,19 @@ export default class Tile {
 
         res[3] = BiomeData[this.biome].mapString;
         return res.join('\n');
+    }
+
+    printVehicles(vehicles) {
+        if (vehicles.length === 0) return "";
+        let remaining = [vehicles.map(v => v.getName())];
+        let res = [];
+        while (remaining.length > 0) {
+            let amount = remaining.filter(v => v === remaining[0]).length;
+            if (amount === 1) res.push(`${remaining[0]}`);
+            else res.push(`${amount}x${remaining[0]}`);
+            remaining = remaining.filter(v => v !== remaining[0]);
+        }
+        return res.join(", ");
     }
 
     hasBuilding(id) {
