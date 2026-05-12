@@ -15,16 +15,16 @@ function test(value, errorMessage) {
     testsRan++;
     if (value) testsPassed++;
     else if (errorMessage) console.error("Test failed: " + errorMessage);
-    else console.error((testsRan + 1) + "th test failed");
+    else console.error(`${testsRan + 1}th test on line ${getLine()} failed`);
 }
 
 function testEqual(a, b, errorMessage) {
-    test(a === b, (errorMessage || `Test ${testsRan + 1} failed`) + `. Exptected value: ${b}. Actual value: ${a}.`);
+    test(a === b, (errorMessage || `Test ${testsRan + 1} on line ${getLine()} failed`) + `. Exptected value: ${b}. Actual value: ${a}.`);
 }
 
 function testPlayerPosition(player, x, y) {
-    test(player.position.x === x, `Player's X is ${player.position.x}. Expected ${x}.`);
-    test(player.position.y === y, `Player's Y is ${player.position.y}. Expected ${y}.`);
+    test(player.position.x === x, `Player's X is ${player.position.x} on line ${getLine()}. Expected ${x}.`);
+    test(player.position.y === y, `Player's Y is ${player.position.y} on line ${getLine()}. Expected ${y}.`);
 }
 
 function action(string, repeat = 1) {
@@ -45,6 +45,14 @@ function assertError() {
 function assertPublicResponse(flip = false) {
     if (flip) test(actionResult && actionResult.secret && !actionResult.respond, "Didn't get a secret response when expected. Got a public response: " + actionResult.respond);
     else test(actionResult && !actionResult.secret && actionResult.respond, "Didn't get a public response when expected. Got a secret response: " + actionResult.secret);
+}
+
+function getLine() {
+    let string = new Error().stack;
+    if (!string) return "???";
+    let bigGameLine = string.split('\n').find(s => s.includes("bigGameTest"));
+    if (!bigGameLine) return "???";
+    return bigGameLine.split(':').at(-2);
 }
 
 export function bigGameTest() {
@@ -935,6 +943,13 @@ export function bigGameTest() {
     test(cart.hasDriver());
     test(cart.getRemainingCapacity() < cart.capacity);
 
+    action("buduj marmur marmur");
+    assertError();
+    action("zbieraj");
+    assertError();
+    action("szukaj");
+    assertError();
+
     action("idź prawo");
     testPlayerPosition(player, 2, 1);
     test(cart.position.equals(player.position));
@@ -961,6 +976,89 @@ export function bigGameTest() {
     action("prowadź wóz");
     assertError();
     testPlayerPosition(player, 1, 1);
+    action("idź lewo");
+    action("prowadź wóz");
+    action("idź prawo");
+    action("wysiądź");
+    testPlayerPosition(player, 1, 1);
+    testPlayerPosition(cart, 1, 1);
+
+    //Storing items and testing capacity
+    action("zbierz");
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 2);
+    testEqual(cart.items.getItemAmount(ITEM.MARMUR), 0);
+    testEqual(cart.getRemainingCapacity(), 10);
+    action("włóż wóz marmur");
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 1);
+    testEqual(cart.items.getItemAmount(ITEM.MARMUR), 1);
+    testEqual(cart.getRemainingCapacity(), 9);
+    action("włóż wóz marmur");
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 0);
+    testEqual(cart.items.getItemAmount(ITEM.MARMUR), 2);
+    action("włóż wóz marmur");
+    assertError();
+    action("wyjmij wóz marmur");
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 1);
+    testEqual(cart.items.getItemAmount(ITEM.MARMUR), 1);
+    action("wyjmij wóz marmur");
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 2);
+    testEqual(cart.items.getItemAmount(ITEM.MARMUR), 0);
+    action("włóż wóz marmur", 2);
+    action("zbierz")
+    action("włóż wóz marmur", 2);
+    testEqual(cart.items.getItemAmount(ITEM.MARMUR), 4);
+    testEqual(cart.getRemainingCapacity(), 6);
+    action("wzłóż wóz żelazny kilof")
+    testEqual(cart.getRemainingCapacity(), 6);
+    action("wyjmij wóz żelazny kilof");
+    testEqual(cart.getRemainingCapacity(), 6);
+    for (let i = 0; i < 3; i++) {
+        action("zbierz")
+        action("włóż wóz marmur", 2);
+    }
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 0);
+    testEqual(cart.items.getItemAmount(ITEM.MARMUR), 10);
+    testEqual(cart.getRemainingCapacity(), 0);
+    action("prowadź wóz");
+    assertError();
+    action("zbierz");
+    action("włóż wóz marmur");
+    assertError();
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 2);
+    testEqual(cart.items.getItemAmount(ITEM.MARMUR), 10);
+    action("wyjmij wóz marmur");
+    assertError();
+    action("wyrzuć marmur", 2);
+    action("wyjmij wóz marmur", 2);
+    testEqual(cart.getRemainingCapacity(), 2);
+    testEqual(player.getWeight(), 3);
+    action("prowadź wóz");
+    assertError();
+    test(!player.isInVehicle());
+    action("wyrzuć marmur")
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 1);
+    testEqual(player.getWeight(), 2);
+    action("prowadź wóz");
+    test(player.isInVehicle());
+    action("idź prawo");
+    action("włóż wóz marmur");
+    assertError();
+    action("wysiądź");
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 1);
+    action("wyjmij wóz marmur");
+    testEqual(player.items.getItemAmount(ITEM.MARMUR), 2);
+    testEqual(cart.items.getItemAmount(ITEM.MARMUR), 7);
+    action("wyrzuć marmur", 2);
+    for (let i = 0; i < 7; i++) {
+        action("wyjmij wóz marmur");
+        action("wyrzuć marmur");
+    }
+    testEqual(cart.items.getItemAmount(ITEM.MARMUR), 0);
+    testEqual(cart.getRemainingCapacity(), 10);
+
+    action("prowadź wóz");
+    action("idź w");
+    action("wysiądź");
 
     //#region Roads
     //We're making a road from (0,1) to (3,1) inclusive
@@ -1018,8 +1116,8 @@ export function bigGameTest() {
     testPlayerPosition(player, 1, 1);
 
     //Using with vehicle
-    action("idź lewo");
     action("prowadź wóz");
+    action("idź lewo");
     action("idź prawo prawo prawo");
     assertError();
     action("idź góra góra");
