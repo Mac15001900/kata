@@ -3,13 +3,120 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "map.tmx",
+    "activeFile": "M:/Projects/Almu gra 3.0/tiles/level1-2-3.tmx",
     "expandedProjectPaths": [
     ],
+    "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
         "Biomes.tsx": {
             "scaleInDock": 0.75,
             "scaleInEditor": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/Beds.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/Big computers.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/Comp2.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/Crawl.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/Deco 2.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/Decoratives.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/Diagonal.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/FA3.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/FA4.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/FA5.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/FB.tsx": {
+            "scaleInDock": 1.5
+        },
+        "M:/Projects/Almu gra 3.0/tiles/FC.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/FD.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/FE.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/Food objects.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/FutA2-conv.tsx": {
+            "scaleInDock": 3
+        },
+        "M:/Projects/Almu gra 3.0/tiles/FutA42.tsx": {
+            "scaleInDock": 2
+        },
+        "M:/Projects/Almu gra 3.0/tiles/GA4.tsx": {
+            "scaleInDock": 2
+        },
+        "M:/Projects/Almu gra 3.0/tiles/Glowing.tsx": {
+            "scaleInDock": 1.5
+        },
+        "M:/Projects/Almu gra 3.0/tiles/Misc 2.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/RefugeRoom.tmx": {
+            "expandedObjectLayers": [
+                6
+            ],
+            "scale": 0.75,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 216.66666666666663,
+                "y": -25.33333333333337
+            }
+        },
+        "M:/Projects/Almu gra 3.0/tiles/SF_Inside_Bedit.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/Skarbiec test.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/ZShips.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/fromIcons/Avery icons 24.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/level1-2-3.tmx": {
+            "scale": 3,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 229.49999999999997,
+                "y": -729
+            }
+        },
+        "M:/Projects/Almu gra 3.0/tiles/library_tiles.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/tileset files/FSM Lab.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/tileset files/Lab.tsx": {
+            "scaleInDock": 1
+        },
+        "M:/Projects/Almu gra 3.0/tiles/tileset files/Test shadows.tsx": {
+            "scaleInDock": 2
         },
         "map.tmx": {
             "scale": 1.5,
@@ -23,13 +130,14 @@
             "scale": 1,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 320,
+                "x": 320.5,
                 "y": 416
             }
         }
     },
     "last.exportedFilePath": "M:/Projects/kata/mapCreation",
     "last.imagePath": "M:/Projects/kata/mapCreation",
+    "map.fixedSize": false,
     "map.height": 26,
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "map.lastUsedFormat": "tmx",
@@ -40,13 +148,16 @@
     "openFiles": [
         "Biomes.tsx",
         "map.tmx",
-        "testMap.tmx"
+        "M:/Projects/Almu gra 3.0/tiles/level1-2-3.tmx",
+        "M:/Projects/Almu gra 3.0/tiles/RefugeRoom.tmx"
     ],
     "project": "kataMaps.tiled-project",
     "recentFiles": [
         "Biomes.tsx",
-        "testMap.tmx",
-        "map.tmx"
+        "map.tmx",
+        "M:/Projects/Almu gra 3.0/tiles/RefugeRoom.tmx",
+        "M:/Projects/Almu gra 3.0/tiles/level1-2-3.tmx",
+        "testMap.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.margin": 0,
