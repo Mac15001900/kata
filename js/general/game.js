@@ -378,7 +378,7 @@ export class Game {
                         filter(b => b.cost.includes(items[0]) && b.cost.includes(items[1]));
 
                     if (candidates.length === 0) {
-                        return { respond: base + "Po długich eksperymentach stwierdzasz, że najwyraźniej nie jesteś w stanie stworzyć żadnego budynku, którego koszt zawierałby te dwa przedmioty, a poza nimi tylko przedmioty, które już odkryliście." };
+                        return { respond: base + "Po długich eksperymentach stwierdzasz, że najwyraźniej nie jesteś w stanie stworzyć żadnego nowego budynku, którego koszt zawierałby te dwa przedmioty, a poza nimi tylko przedmioty, które już odkryliście." };
                     }
 
                     let selected = candidates[Math.floor(Math.random() * candidates.length)];
@@ -426,7 +426,7 @@ export class Game {
             case ACTION.WYSIĄDŹ: {
                 if (!player.isInVehicle()) throw new ActionException("Nie jesteś w żadnym pojeździe.");
                 player.leaveVehicle();
-                return { secret: "Wysiadasz" + freeAction };
+                return { secret: "Wysiadasz." + freeAction };
             }
             case ACTION.WŁÓŻ: {
                 let { vehicle, strings } = parseVehicleOnTile(options, bundle);

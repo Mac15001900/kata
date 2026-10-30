@@ -30,11 +30,12 @@ export default class Tile {
         let vehicles = this.printVehicles(this.getVehiclesHere(movingEntities.vehicles));
 
         if (players.length > 2 || vehicles.length > 0) {
-            res[0] = `U x ${players.length}`;
+            if(players.length> 1 ) res[0] = `U x ${players.length}`;
+            else if(players.length === 1) res[0] = players[0];
             res[1] = vehicles;
         } else {
-            if (players[0]) res[0] = players[0].name;
-            if (players[1]) res[1] = players[1].name;
+            if (players[0]) res[0] = players[0];
+            if (players[1]) res[1] = players[1];
         }
         // res[2] = `[🏗 🏗 🏗]`;
         if (this.construction.length === 1) res[2] = `[${this.construction[0].getName()}]`;
