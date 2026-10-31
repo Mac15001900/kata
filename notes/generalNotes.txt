@@ -51,4 +51,4 @@ app.js:80 Error: 4000: Unknown error.
     at TCP.done (node:internal/tls/wrap:671:7)
     at TCP.callbackTrampoline (node:internal/async_hooks:130:17)
 
-Try restarting Eris if it gets an error?
+Try automatically restarting Eris if it gets an error?

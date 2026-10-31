@@ -37,6 +37,7 @@ export const ACTION = Object.freeze({
     TWÓRZ: 41,
     PROJEKTUJ: 42,
     KUJ: 43,
+    POWIEDZ: 44,
 
     WSIĄDŹ: 50,
     WYSIĄDŹ: 51,

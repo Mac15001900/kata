@@ -29,6 +29,7 @@ export function getCommandFromString(string) {
     s[ACTION.TWÓRZ] = 'twórz stwórz zrób';
     s[ACTION.PROJEKTUJ] = 'projektuj zaprojektuj projekt';
     s[ACTION.KUJ] = 'kuj wykuj';
+    s[ACTION.POWIEDZ] = 'powiedz mów wymów zaklnij';
 
     s[ACTION.WSIĄDŹ] = "wsiądź wsiadaj";
     s[ACTION.WYSIĄDŹ] = "wysiądź wysiadaj";
@@ -43,7 +44,7 @@ export function getCommandFromString(string) {
 }
 
 export function getActionCost(action) {
-    if ([ACTION.EKWIPUNEK, ACTION.WYRZUĆ, ACTION.DODAJ, ACTION.WEŹ, ACTION.ZOSTAW, ACTION.ZJEDZ, ACTION.DORZUĆ].includes(action)) return 0;
+    if ([ACTION.EKWIPUNEK, ACTION.WYRZUĆ, ACTION.DODAJ, ACTION.WEŹ, ACTION.ZOSTAW, ACTION.ZJEDZ, ACTION.DORZUĆ, ACTION.POWIEDZ, ACTION.WSIĄDŹ, ACTION.WYSIĄDŹ, ACTION.WŁÓŻ, ACTION.WYJMIJ, ACTION.PROWADŹ].includes(action)) return 0;
     return 1;
 }
 

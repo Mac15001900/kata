@@ -609,7 +609,7 @@ class Discovery {
     getText() {
         switch (this.type) {
             case DISCOVERY_TYPE.ITEM: return "nowy przedmiot - " + printItem(this.id)
-            case DISCOVERY_TYPE.COMMAND: return "nowa akcja - " + capitalize(getCommandName(this.id));
+            case DISCOVERY_TYPE.COMMAND: return "nową akcję - " + capitalize(getCommandName(this.id));
             case DISCOVERY_TYPE.BUILDING: return "nowy budynek - " + BuildingData.get(this.id).name;
             case DISCOVERY_TYPE.RECIPE: return "nowy przepis - " + this.id;
             case DISCOVERY_TYPE.VEHICLE: return "nowy pojazd - " + VehicleData[this.id].name;
